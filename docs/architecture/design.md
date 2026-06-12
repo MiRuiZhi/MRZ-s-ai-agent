@@ -70,7 +70,7 @@ flowchart TB
     end
 
     subgraph RepoOnly["仓库文档资产"]
-        Docs["USAGE.md / DESIGN.md / architecture\n文档和面试材料"]
+        Docs["docs/architecture / docs/development / docs/project\n文档和面试材料"]
     end
 
     User --> Nginx

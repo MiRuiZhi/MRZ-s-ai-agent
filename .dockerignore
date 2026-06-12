@@ -26,12 +26,10 @@ Dockerfile*
 
 # Non-runtime repository assets and local workflow files.
 assets/
-architecture/
-deployment/
+docs/
 runtime/
 .codegraph/
-USAGE.md
-DESIGN.md
+CHANGELOG.md
 
 # Windows-only helper binaries are not part of the Linux Docker runtime.
 *.exe

@@ -4,6 +4,27 @@
 
 这里记录的是功能阶段，不伪造开发日期。
 
+## v0.9 文档信息架构与部署说明整理
+
+目标：让读者更快理解项目目录、模块职责、部署方式和验证路径。
+
+repo/docs：
+
+- 新增 `docs/README.md` 作为详细文档导航。
+- 新增 `docs/architecture/repository-map.md` 说明仓库结构和推荐阅读顺序。
+- 新增 `docs/development/testing.md` 作为主链路验证清单。
+- 将详细设计、使用手册、部署说明、项目复盘和面试提纲收进 `docs/` 分区。
+
+modules：
+
+- 新增 `services/README.md` 说明后端服务分工。
+- 新增 `services/cpp-worker/README.md` 说明 C++ worker 边界、协议和验证方式。
+- 扩充 `services/agent-api/README.md`、`reactor-tool/README.md`、`ui/README.md`，让每个主模块都有独立入口。
+
+deploy：
+
+- 扩充单机 Docker 部署说明，补充服务拓扑、初始化、真实模型配置、部署验证、日志、重启、备份和排障。
+
 ## v0.8 运行边界与仓库瘦身
 
 目标：让主链路更稳、更小、更容易理解。
@@ -67,11 +88,13 @@ repo/ui：
 新增与更新：
 
 - `README.md`：项目入口、模块概览、快速开始、测试命令和文档导航。
-- `PROJECT_STORY.md`：工程复盘、模块职责、技术取舍和表达提纲。
+- `docs/README.md`：详细文档索引。
+- `docs/project/story.md`：工程复盘、模块职责、技术取舍和表达提纲。
 - `CHANGELOG.md`：按模块记录阶段变化。
-- `DESIGN.md`：服务边界、Agent 循环、数据模型、SSE、工具和部署细节。
-- `USAGE.md`：运行、配置、接口、开发和排障说明。
-- `architecture/interview-notes.md`：面试讲解提纲。
+- `docs/architecture/design.md`：服务边界、Agent 循环、数据模型、SSE、工具和部署细节。
+- `docs/development/usage.md`：运行、配置、接口、开发和排障说明。
+- `docs/development/testing.md`：验证清单。
+- `docs/project/interview-notes.md`：面试讲解提纲。
 
 ## v0.5 架构、使用与部署说明
 

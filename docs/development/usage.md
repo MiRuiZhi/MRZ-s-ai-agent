@@ -64,11 +64,13 @@ Docker 构建上下文已经通过 `.dockerignore` 进一步瘦身：
 
 最常用入口：
 
-- 使用手册：`USAGE.md`
-- 设计说明：`DESIGN.md`
-- Docker 部署补充：`deployment/single-node-docker.md`
-- 架构速览：`architecture/python-cpp-rewrite.md`
-- 面试笔记：`architecture/interview-notes.md`
+- 文档导航：`docs/README.md`
+- 仓库结构地图：`docs/architecture/repository-map.md`
+- 设计说明：`docs/architecture/design.md`
+- Docker 部署补充：`docs/deployment/single-node-docker.md`
+- 架构速览：`docs/architecture/overview.md`
+- 面试笔记：`docs/project/interview-notes.md`
+- 验证清单：`docs/development/testing.md`
 
 ## 一键 Docker 启动
 
