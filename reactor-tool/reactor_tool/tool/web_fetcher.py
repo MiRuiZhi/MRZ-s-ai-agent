@@ -193,7 +193,7 @@ class WebFetcher:
         return h1.get_text(strip=True) if h1 else ""
 
     def _extract_metadata(self, soup: BeautifulSoup) -> dict[str, Any]:
-        """提取最小 metadata，供 Java 侧调试和展示。"""
+        """提取最小 metadata，供上游调试和展示。"""
         return {
             "description": self._extract_meta_content(soup, "name", "description"),
             "siteName": self._extract_meta_content(soup, "property", "og:site_name"),

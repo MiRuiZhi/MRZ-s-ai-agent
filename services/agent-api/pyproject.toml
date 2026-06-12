@@ -1,7 +1,7 @@
 [project]
 name = "reactor-agent-api"
 version = "0.1.0"
-description = "Python replacement for the Reactor Java agent orchestration layer"
+description = "Python agent orchestration service for the Reactor Agent mainline"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

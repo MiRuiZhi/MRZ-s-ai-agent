@@ -23,18 +23,6 @@ Dockerfile*
 **/.mypy_cache/
 **/.ruff_cache/
 
-# Legacy Java sources are retained in the repository for learning/reference,
-# but they are not needed by the Python+C++ Docker services.
-Reactor-agent-api/
-Reactor-agent-app/
-Reactor-agent-case/
-Reactor-agent-domain/
-Reactor-agent-infrastructure/
-Reactor-agent-trigger/
-Reactor-agent-types/
-pom.xml
-fill-payload.ps1
-
 # Non-runtime repository assets and local workflow files.
 assets/
 architecture/

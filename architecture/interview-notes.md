@@ -2,7 +2,7 @@
 
 ## 一句话介绍
 
-我把一个 Java Spring Boot 多智能体平台重构成 Python+C++ 两服务架构：Python 负责 Agent 编排和 Web 协议，C++负责低层执行隔离，保留 ReAct、PlanSolve、工具并发、执行账本和 artifact 回放这些核心能力。
+我把一个历史 Java Spring Boot 多智能体平台重构成 Python+C++ 两服务架构：Python 负责 Agent 编排和 Web 协议，C++负责低层执行隔离，保留 ReAct、PlanSolve、工具并发、执行账本和 artifact 回放这些核心能力。
 
 ## 可以重点展开的点
 
@@ -11,7 +11,7 @@
    - PlanSolve：先规划，再对子任务执行，适合长任务和复杂交付。
 
 2. **并发设计**
-   - Java 版用 `CompletableFuture`。
+   - 历史版本用 `CompletableFuture`。
    - Python 版用 `asyncio.gather` 和 `Semaphore`。
    - 工具调用并发和 PlanSolve 子任务并发是两个不同层级。
 
@@ -28,7 +28,7 @@
    - 不把 C++强行塞到 LLM 编排层，是为了降低复杂度和提升可维护性。
 
 5. **迁移策略**
-   - 不逐行翻译 Java。
+   - 不逐行翻译旧后端。
    - 先冻结外部协议，再迁核心运行时，再迁基础设施。
    - 保留业务语义，替换实现方式。
 
@@ -49,4 +49,3 @@ Agent 编排和工具执行的资源特征不同。Agent API 更关注低延迟 
 **如何保证工具并发后状态不乱？**
 
 每个 tool call 都有稳定 `toolCallId`，执行前先记录 running 状态，结束时按同一 ID 回写 success/failed，并把 observation 写回 Memory。
-

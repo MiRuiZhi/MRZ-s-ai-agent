@@ -2,7 +2,7 @@
 
 这份文档说明如何把当前仓库里的 Python+C++ 重构版跑起来、如何切换模型、如何调用核心接口、如何做本地开发和排障。
 
-当前重构版的定位是：保留原 Java Agent 的核心协议和核心运行语义，用 Python FastAPI 承担后端编排，用原有 `reactor-tool` 承担工具运行时，用 C++ worker 承担受控脚本执行、超时、退出码、产物扫描和哈希计算。
+当前重构版的定位是：保留历史 Agent 的核心协议和核心运行语义，用 Python FastAPI 承担后端编排，用 `reactor-tool` 承担工具运行时，用 C++ worker 承担受控脚本执行、超时、退出码、产物扫描和哈希计算。
 
 ## 当前状态
 
@@ -16,14 +16,14 @@
 
 需要注意的边界：
 
-- 这不是把 Java 所有历史业务接口逐字段完全复刻完的最终版，而是一个可继续迭代的 Python+C++ 生产替代基础。
-- `/data/chatQuery` 目前是前端兼容 SSE，占位输出 `THINK`、空 `CHART_DATA` 和 `READY`，还没有完整迁移 Java 的 NL2SQL 能力。
-- Admin 路由是通用兼容实现，落在 `config_record` 表，不是所有 Java Admin DTO 的逐字段强类型版本。
+- 这不是把所有历史业务接口逐字段完全复刻完的最终版，而是一个可继续迭代的 Python+C++ 生产替代基础。
+- `/data/chatQuery` 目前是前端兼容 SSE，占位输出 `THINK`、空 `CHART_DATA` 和 `READY`，还没有完整强化 NL2SQL 能力。
+- Admin 路由是通用兼容实现，落在 `config_record` 表，不是所有历史 Admin DTO 的逐字段强类型版本。
 - 本机 Docker daemon 未启动时，不能执行 `docker compose up --build` 或 `docker compose build`。代码层面已经通过 `docker compose config` 校验。
 
 ## 瘦身说明
 
-本项目已经做过一轮保守瘦身，原则是：删除确定不影响 Python+C++ 运行功能的生成物和无关二进制，保留仍有学习、对照和迁移价值的源码。
+本项目已经收敛为 Python+C++ 主线，原则是：删除确定不影响主链路运行的生成物、无关二进制和旧 Java/Maven 后端源码，保留当前可运行服务与必要文档。
 
 已移除：
 
@@ -31,17 +31,16 @@
 - `services/agent-api/**/__pycache__` 和 `*.pyc`：Python 编译缓存。
 - `.DS_Store`、`assets/.DS_Store`、`.codegraph`：本地系统/索引生成物。
 - `reactor-tool/xiaohongshu-login-windows-amd64.exe` 和 `reactor-tool/xiaohongshu-mcp-windows-amd64.exe`：Windows-only 小红书 MCP 辅助二进制，不参与当前 Linux Docker 运行时。
+- `Reactor-agent-*` 旧 Java 模块、根 `pom.xml` 和 `fill-payload.ps1`：旧后端源码与旧 jar 打包方式不再参与当前主线。
 
 保留：
 
-- `Reactor-agent-*` Java 原源码：它不参与新的 Docker 运行，但保留作学习对照、迁移映射和面试复盘材料。
 - `reactor-tool`：这是当前工具运行时，必须保留。
 - `ui`：当前 React 前端，必须保留。
 - `services/agent-api` 和 `services/cpp-worker`：Python+C++ 重构版核心，必须保留。
 
 Docker 构建上下文已经通过 `.dockerignore` 进一步瘦身：
 
-- Java 旧模块保留在仓库，但不会发送给 Docker daemon。
 - `assets`、`runtime`、文档、缓存、虚拟环境、`.exe` 不进入镜像构建上下文。
 - Docker 镜像只需要 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`ui` 和 `deploy/nginx.conf` 等运行相关内容。
 

@@ -492,7 +492,7 @@ async def ask_llm(
             f"has_api_key={bool(params.get('api_key'))}, timeout={timeout}"
         )
 
-    # Align key request fields with Java-side behavior, while honoring existing python settings.
+    # Align key request fields with the legacy stream protocol while honoring existing Python settings.
     # temperature: function arg > existing params > env > default(0.0)
     if temperature is not None:
         params["temperature"] = temperature
@@ -516,7 +516,7 @@ async def ask_llm(
             effective_model = str(params.get("model") or model)
             params["max_tokens"] = int(LLMModelInfoFactory.get_max_output(effective_model, default=32000))
 
-    # Header alignment: Java stream uses Accept: text/event-stream.
+    # Header alignment: streaming gateways expect Accept: text/event-stream.
     merged_headers = {}
     if isinstance(params.get("extra_headers"), dict):
         merged_headers.update(params.get("extra_headers"))

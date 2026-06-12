@@ -52,7 +52,7 @@ router = APIRouter(route_class=RequestHandlerRoute)
 
 
 def _error_response(status_code: int, message: str) -> JSONResponse:
-    """统一错误响应结构，便于 Java 侧直连排障。"""
+    """统一错误响应结构，便于上游直连排障。"""
     return JSONResponse(status_code=status_code, content={"message": message})
 
 
@@ -674,7 +674,7 @@ async def post_cpp_worker(body: CppWorkerRequest):
 
 
 def _build_mrag_chunk(content: str, finish_reason: str | None = None) -> dict:
-    """统一输出与 Java 侧兼容的 OpenAI SSE 片段结构。"""
+    """统一输出为 OpenAI 兼容的 SSE 片段结构。"""
     return {
         "id": "chatcmpl-mrag",
         "choices": [
@@ -769,4 +769,3 @@ async def post_mrag_query(body: MultimodalRAGRequest):
         ping_message_factory=lambda: ServerSentEvent(data="heartbeat"),
         ping=15,
     )
-

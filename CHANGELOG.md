@@ -4,6 +4,24 @@
 
 这里记录的是功能阶段，不伪造开发日期。
 
+## v0.7 Python+C++ 主线收敛
+
+目标：删除旧 Java/Maven 后端源码，让仓库主形态和运行链路保持一致。
+
+变更：
+
+- 删除 `Reactor-agent-*` 旧 Java 模块。
+- 删除根 `pom.xml` 和依赖旧 Java jar 的 `fill-payload.ps1`。
+- 清理 `.dockerignore`、`.gitignore` 中的旧 Java/Maven 规则。
+- 明确主链路能力由 `services/agent-api`、`reactor-tool`、`services/cpp-worker`、`ui` 和 Docker Compose 承接。
+- 补充 tool-runtime 主链路路由保护测试。
+
+边界：
+
+- 保留 Agent 对话、ReAct、PlanSolve、SSE、工具调用、文件产物、图片生成、MRAG/RAG、前端工作台和 Docker 部署。
+- 不追求旧 Java Admin/DataAgent 全量接口逐项等价迁移。
+- Java 对照依据保留在 Git 历史中，不再保留在当前工作树。
+
 ## v0.6 作品集展示与项目复盘
 
 目标：让 GitHub 展示更清楚，也让面试讲解更顺畅。
@@ -71,7 +89,7 @@
 - nginx 提供同源访问，减少前端跨域问题。
 - `agent-api` 启动时可以自动执行 Alembic migration 和 seed。
 - MySQL、Qdrant、tool-output 使用 Docker volume 持久化。
-- `.dockerignore` 排除旧 Java 模块、缓存、文档资产和无关二进制，减少构建上下文。
+- `.dockerignore` 排除缓存、文档资产和无关二进制，减少构建上下文。
 
 ## v0.3 C++ worker 与工具运行时集成
 
@@ -116,7 +134,7 @@ C++ worker 能力：
 
 - `services/agent-api`
 - FastAPI app factory。
-- 兼容 Java Controller 的 route。
+- 兼容旧前端调用约定的 route。
 - Pydantic 请求、响应、SSE schema。
 - `ReactAgent`
 - `PlanningAgent`
@@ -147,7 +165,7 @@ C++ worker 能力：
 
 ## v0.1 原始工程基线
 
-目标：保留原始工程作为迁移来源和学习对照。
+目标：导入原始工程作为迁移来源和学习对照。
 
 包含：
 
@@ -156,7 +174,7 @@ C++ worker 能力：
 - 原 assets/runtime/pom 等工程文件。
 - 原始业务分层和模块结构。
 
-保留原因：
+阶段价值：
 
 - 方便对照 Java 到 Python/C++ 的映射。
 - 方便理解原项目的业务语义。
@@ -164,6 +182,6 @@ C++ worker 能力：
 
 当前处理方式：
 
-- Java 源码保留在仓库。
-- Java 源码不参与 Docker 构建。
+- 旧 Java/Maven 后端源码已在 v0.7 从当前工作树删除。
+- 迁移对照依据保留在 Git 历史中。
 - 运行链路以 Python+C++ 重构版为主。

@@ -20,7 +20,7 @@ class VLLMClient:
     def __init__(self, base_url=None, model_name=None, api_key=None):
         self.api_key = api_key or os.getenv("VLM_API_KEY")
         self.model_name = model_name or os.getenv("VLM_MODEL_NAME")
-        # 兼容把 base url 写成具体接口路径的场景，切换到 Java 同款供应商配置时自动归一化。
+        # 兼容把 base url 写成具体接口路径的场景，切换供应商配置时自动归一化。
         self.model_base_url = _normalize_openai_compatible_base_url(base_url or os.getenv("VLM_MODEL_BASE_URL"))
         self.client = OpenAI(
             api_key=self.api_key,

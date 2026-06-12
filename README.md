@@ -4,7 +4,7 @@ MRZ's AI Agent 是一套基于 **Python + C++** 的 AI Agent 后端运行时。
 
 项目围绕现代 Agent 系统的核心链路搭建：`ReAct`、`PlanSolve`、工具调用、SSE 流式输出、执行账本、文件产物、React 前端工作台和 Docker 单机部署。主后端使用 FastAPI 实现，工具运行时通过 HTTP 解耦，底层受控执行由 C++ worker 承担。
 
-当前可运行主链路集中在：
+当前仓库主线已经收敛为 Python + C++。旧 Java/Maven 后端源码已从工作树删除，迁移依据保留在 Git 历史和本文档的架构说明中。当前可运行主链路集中在：
 
 - `services/agent-api`
 - `services/cpp-worker`
@@ -66,7 +66,7 @@ flowchart TB
 
 | 模块 | 路径 | 作用 |
 | --- | --- | --- |
-| `agent-api` | `services/agent-api` | FastAPI API、SSE、Agent 编排、SQL 账本、Admin 兼容 |
+| `agent-api` | `services/agent-api` | FastAPI API、SSE、Agent 编排、SQL 账本、前端兼容入口 |
 | `cpp-worker` | `services/cpp-worker` | C++ JSON-over-stdin worker，负责受控执行和文件扫描 |
 | `tool-runtime` | `reactor-tool` | deep search、report、code interpreter、file service、MRAG 等工具 |
 | `ui` | `ui` | React 前端工作台 |
@@ -245,6 +245,13 @@ C++ worker：
 python3 -m unittest discover -s services/cpp-worker/tests -v
 ```
 
+tool-runtime：
+
+```bash
+cd reactor-tool
+uv run python -m unittest discover -s tests -v
+```
+
 C++ 编译检查：
 
 ```bash
@@ -272,16 +279,16 @@ docker compose config
 - tool-runtime HTTP adapter
 - SQLAlchemy 账本
 - Alembic 数据库版本管理
-- Admin 通用 CRUD 持久化
+- 前端兼容的 Admin 通用 CRUD 持久化入口
 - 文件上传转发
-- dataAgent SSE 兼容入口
+- dataAgent SSE 前端兼容入口
 - C++ worker
 - Docker Compose 单机部署配置
-- Docker build context 瘦身
+- 旧 Java/Maven 后端源码移除，仓库主线收敛为 Python+C++
 
 后续生产化方向：
 
-- 完善 dataAgent/NL2SQL 能力。
+- 强化 dataAgent/NL2SQL 能力。
 - Admin DTO 强类型化。
 - 正式鉴权和权限控制。
 - 更完整的 tool-runtime 安全沙箱。
