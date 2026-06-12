@@ -1,10 +1,35 @@
-# AI Agent Python+C++ Runtime
+# MRZ's AI Agent
 
-一个从 Java 多智能体项目重构而来的 **Python + C++ Agent 后端实验/学习项目**。
+一个从 Java 多智能体项目重构而来的 **Python + C++ Agent 后端学习与作品集项目**。
 
 这个版本保留原项目最有价值的业务思想：`ReAct`、`PlanSolve`、工具调用、SSE 流式输出、执行账本、文件产物和前端工作台；同时把主后端重建为更容易学习、调试和面试讲解的 Python 技术栈，并用 C++ 封装底层受控执行边界。
 
 > 当前仓库仍保留 `Reactor-agent-*` Java 源码，作为学习对照和迁移来源；真正运行的重构版集中在 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`ui` 和 Docker Compose。
+
+## 项目定位
+
+这个仓库不是简单换语言，而是一次面向学习、工程化和面试表达的系统性重构：
+
+- 从 Java/Spring 风格的 Agent 后端中抽出核心业务语义。
+- 用 Python FastAPI 重建 API、SSE、Agent 编排、数据库账本和管理接口。
+- 用 `asyncio` 表达 ReAct 与 PlanSolve 中的并发工具调用和并发子任务。
+- 复用并整理原有 `reactor-tool`，避免为了换语言而丢掉搜索、报告、代码解释器、图片生成、MRAG 等工具能力。
+- 用 C++ worker 承担低层执行边界，让脚本执行、超时、stdout/stderr、产物扫描和 hash 计算从 Python 业务代码中分离出来。
+- 保留 React 前端，并通过 nginx 做同源代理，降低前端迁移成本。
+- 补充使用手册、设计说明、项目演进记录和面试讲解材料，方便从源码学习到表达。
+
+## 作品集导航
+
+如果你是 HR 或面试官，可以按下面顺序看：
+
+| 想了解什么 | 推荐入口 |
+| --- | --- |
+| 项目一句话价值 | 本 README 的“面试讲法” |
+| 做了哪些工程改造 | [PROJECT_STORY.md](PROJECT_STORY.md) |
+| 功能阶段和版本演进 | [CHANGELOG.md](CHANGELOG.md) |
+| 怎么本地跑起来 | [USAGE.md](USAGE.md) |
+| 架构和模块细节 | [DESIGN.md](DESIGN.md) |
+| 面试追问怎么回答 | [architecture/interview-notes.md](architecture/interview-notes.md) |
 
 ## 为什么重构
 
@@ -309,6 +334,8 @@ docker compose config
 
 - [USAGE.md](USAGE.md)：完整使用手册。
 - [DESIGN.md](DESIGN.md)：细粒度设计说明和统一架构图。
+- [PROJECT_STORY.md](PROJECT_STORY.md)：项目背景、重构思路、关键取舍和面试表达。
+- [CHANGELOG.md](CHANGELOG.md)：按版本阶段整理的中文变更记录。
 - [deployment/single-node-docker.md](deployment/single-node-docker.md)：单机 Docker 部署。
 - [architecture/python-cpp-rewrite.md](architecture/python-cpp-rewrite.md)：架构速览。
 - [architecture/interview-notes.md](architecture/interview-notes.md)：面试讲解稿和追问答案。
