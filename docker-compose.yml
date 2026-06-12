@@ -1,0 +1,98 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: reactor_agent
+      MYSQL_USER: reactor
+      MYSQL_PASSWORD: reactor
+      MYSQL_ROOT_PASSWORD: reactor-root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-ureactor", "-preactor"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  qdrant:
+    image: qdrant/qdrant:v1.15.1
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+  tool-runtime:
+    build:
+      context: .
+      dockerfile: reactor-tool/Dockerfile
+    environment:
+      FILE_SAVE_PATH: /app/skilloutput
+      FILE_SERVER_URL: http://localhost/tool/v1/file_tool
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPSEARCH_BASE_URL: ${DEEPSEARCH_BASE_URL:-}
+      DEEPSEARCH_API_KEY: ${DEEPSEARCH_API_KEY:-}
+      USE_SEARCH_ENGINE: ${USE_SEARCH_ENGINE:-ddg}
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+    volumes:
+      - tool-output:/app/skilloutput
+    depends_on:
+      - qdrant
+    ports:
+      - "1601:1601"
+
+  agent-api:
+    build:
+      context: .
+      dockerfile: services/agent-api/Dockerfile
+    environment:
+      REACTOR_DATABASE_URL: mysql+pymysql://reactor:reactor@mysql:3306/reactor_agent
+      REACTOR_TOOL_RUNTIME_BASE_URL: http://tool-runtime:1601
+      REACTOR_FAKE_LLM: ${REACTOR_FAKE_LLM:-true}
+      REACTOR_LEDGER_BACKEND: ${REACTOR_LEDGER_BACKEND:-sql}
+      REACTOR_RUN_MIGRATIONS: ${REACTOR_RUN_MIGRATIONS:-true}
+      REACTOR_RUN_SEED: ${REACTOR_RUN_SEED:-true}
+      REACTOR_OPENAI_BASE_URL: ${REACTOR_OPENAI_BASE_URL:-https://api.openai.com/v1}
+      REACTOR_OPENAI_API_KEY: ${REACTOR_OPENAI_API_KEY:-}
+      REACTOR_REACT_MODEL: ${REACTOR_REACT_MODEL:-gpt-4o-mini}
+      REACTOR_PLANNER_MODEL: ${REACTOR_PLANNER_MODEL:-gpt-4o-mini}
+      REACTOR_EXECUTOR_MODEL: ${REACTOR_EXECUTOR_MODEL:-gpt-4o-mini}
+      REACTOR_SUMMARY_MODEL: ${REACTOR_SUMMARY_MODEL:-gpt-4o-mini}
+      REACTOR_MAX_STEPS: ${REACTOR_MAX_STEPS:-10}
+      REACTOR_MAX_PARALLEL_TASKS: ${REACTOR_MAX_PARALLEL_TASKS:-2}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      tool-runtime:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+      args:
+        SERVICE_BASE_URL: ""
+        REACTOR_TOOL_BASE_URL: "/tool"
+    depends_on:
+      - agent-api
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - ui
+      - agent-api
+      - tool-runtime
+
+volumes:
+  mysql-data:
+  qdrant-data:
+  tool-output:

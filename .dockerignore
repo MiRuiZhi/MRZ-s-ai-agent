@@ -1,0 +1,48 @@
+node_modules/
+target/
+dist/
+build/
+coverage/
+.git/
+.idea/
+.vscode/
+*.log
+.env
+.env.*
+Dockerfile*
+.dockerignore
+
+# Local/generated artifacts
+.DS_Store
+**/.DS_Store
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# Legacy Java sources are retained in the repository for learning/reference,
+# but they are not needed by the Python+C++ Docker services.
+Reactor-agent-api/
+Reactor-agent-app/
+Reactor-agent-case/
+Reactor-agent-domain/
+Reactor-agent-infrastructure/
+Reactor-agent-trigger/
+Reactor-agent-types/
+pom.xml
+fill-payload.ps1
+
+# Non-runtime repository assets and local workflow files.
+assets/
+architecture/
+deployment/
+runtime/
+.codegraph/
+USAGE.md
+DESIGN.md
+
+# Windows-only helper binaries are not part of the Linux Docker runtime.
+*.exe
