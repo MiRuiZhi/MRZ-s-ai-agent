@@ -11,6 +11,7 @@ coverage/
 .env.*
 Dockerfile*
 .dockerignore
+/ui/package-lock.json
 
 # Local/generated artifacts
 .DS_Store

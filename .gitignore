@@ -1,63 +1,42 @@
-target/
+# Build and test artifacts
 node_modules/
 dist/
+build/
 coverage/
+target/
 *.log
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
 !**/.env.example
 
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-*.iws
-*.iml
-*.ipr
-
-### Eclipse ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-
-### Mac OS ###
-.DS_Store
-/.idea/
-/data/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .venv/
 venv/
-# Runtime skills — exclude generated files but keep source code
+
+# C++ / native binaries
+*.o
+*.obj
+*.exe
+
+# Frontend package manager policy: pnpm is canonical.
+/ui/package-lock.json
+
+# Runtime skills: keep source code, ignore generated state.
 runtime/skills/*/__pycache__/
 runtime/skills/*/*.pyc
 runtime/skills/*/.venv/
 runtime/skills/*/output/
 runtime/skills/*/tools/vector_index.json
-Thumbs.db
-*.tmp
-*.swp
 
-# 本地 Agent / Spec 工作流资产不纳入版本控制
+# Local Agent / spec workflow assets
 /.agents/
 /.claude/
 /.codex/
@@ -69,14 +48,11 @@ Thumbs.db
 /openspec/
 /docs/
 
-# 敏感配置与本地运行文件不纳入版本控制
-/mcp-server-csdn/
-/mcp-server-csdn/mcp-server-csdn/src/main/resources/application.yml
-/mcp-server-csdn/data/log/
+# Local service state and generated files
+/data/
 /reactor-tool/cookies.json
 /reactor-tool/skilloutput/
 /reactor-tool/新建 文本文档.txt
-/reactor-tool/*.exe
 /ui/.env
 /ui/.claude/
 /ui/.serena/
@@ -84,5 +60,14 @@ Thumbs.db
 /ui/.playwright-mcp/
 /.playwright-mcp/
 /.codegraph/
-/.codegraph/
-/.codegraph/
+
+# Editors and OS files
+.idea/
+.vscode/
+*.iws
+*.iml
+*.ipr
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
