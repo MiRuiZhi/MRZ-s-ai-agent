@@ -41,7 +41,7 @@ def prepare_workspace(skill_base_path: str, arguments: Dict) -> PreparedWorkspac
     """复制 skill 目录到临时工作区，并写入参数文件。"""
     source_root = Path(skill_base_path).resolve()
     temp_dir = Path(tempfile.mkdtemp(prefix="skill-runner-"))
-    workspace_root = temp_dir / source_root.name
+    workspace_root = (temp_dir / source_root.name).resolve()
     shutil.copytree(source_root, workspace_root)
 
     internal_dir = workspace_root / ".skill"

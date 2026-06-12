@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 import ast
+import ntpath
+import re
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Callable, Literal
 
 
 PermissionProfile = Literal["analysis", "workspace"]
+
+_WINDOWS_PATH_RE = re.compile(r"^(?:[a-zA-Z]:[\\/]|\\\\)")
 
 
 @dataclass(frozen=True)
@@ -158,8 +162,8 @@ def build_permission_policy(
 ) -> CodeInterpreterPermissionPolicy:
     """根据权限档位构建固定策略。"""
     normalized_profile = _normalize_profile(profile)
-    workspace_path = str(Path(workspace_root).resolve())
-    output_path = str(Path(output_dir).resolve())
+    workspace_path = _normalize_policy_path(workspace_root)
+    output_path = _normalize_policy_path(output_dir)
     input_file_paths = _normalize_input_files(input_files)
 
     allowed_read_paths = tuple(sorted(set(input_file_paths.values())))
@@ -301,7 +305,7 @@ def _normalize_input_files(input_files: list[dict[str, str]] | None) -> dict[str
         raw_path = (file_info.get("path") or file_info.get("file_path") or "").strip()
         if not raw_name or not raw_path:
             continue
-        normalized[raw_name] = str(Path(raw_path).resolve())
+        normalized[raw_name] = _normalize_policy_path(raw_path)
     return normalized
 
 
@@ -588,7 +592,7 @@ def _extract_constant_string(node: ast.AST) -> str | None:
 
 
 def _normalize_resolved_path(file_path: str) -> str:
-    return str(Path(file_path).resolve())
+    return _normalize_policy_path(file_path)
 
 
 def _validate_existing_path(
@@ -599,13 +603,11 @@ def _validate_existing_path(
     blocked_reason: str,
     policy: CodeInterpreterPermissionPolicy,
 ) -> str:
-    normalized_path = str(Path(file_path).resolve())
+    normalized_path = _normalize_policy_path(file_path)
     if normalized_path in allowed_paths:
         return normalized_path
     for root in allowed_roots:
-        root_path = Path(root).resolve()
-        candidate_path = Path(normalized_path)
-        if candidate_path == root_path or root_path in candidate_path.parents:
+        if _is_same_or_child_path(normalized_path, root):
             return normalized_path
     raise CodeExecutionPermissionError(
         blocked_reason,
@@ -623,11 +625,39 @@ def _join_and_validate(
     blocked_reason: str,
     policy: CodeInterpreterPermissionPolicy,
 ) -> str:
-    target_path = Path(base_dir).joinpath(relative_path)
+    target_path = _join_policy_path(base_dir, relative_path)
     return _validate_existing_path(
-        str(target_path),
+        target_path,
         allowed_paths=(),
         allowed_roots=allowed_roots,
         blocked_reason=blocked_reason,
         policy=policy,
     )
+
+
+def _normalize_policy_path(file_path: str) -> str:
+    raw_path = str(file_path).strip()
+    if _is_windows_style_path(raw_path):
+        return ntpath.normpath(str(PureWindowsPath(raw_path)))
+    return str(Path(raw_path).resolve())
+
+
+def _join_policy_path(base_dir: str, relative_path: str) -> str:
+    if _is_windows_style_path(base_dir):
+        return _normalize_policy_path(str(PureWindowsPath(base_dir).joinpath(relative_path)))
+    return str(Path(base_dir).joinpath(relative_path))
+
+
+def _is_windows_style_path(file_path: str) -> bool:
+    return bool(_WINDOWS_PATH_RE.match(str(file_path).strip()))
+
+
+def _is_same_or_child_path(candidate: str, root: str) -> bool:
+    if _is_windows_style_path(candidate) or _is_windows_style_path(root):
+        candidate_path = PureWindowsPath(candidate)
+        root_path = PureWindowsPath(root)
+        return candidate_path == root_path or root_path in candidate_path.parents
+
+    candidate_path = Path(candidate).resolve()
+    root_path = Path(root).resolve()
+    return candidate_path == root_path or root_path in candidate_path.parents

@@ -27,9 +27,9 @@ from ..utils.logger_utils import logger
 class ImageRetriever:
     """图像检索器类"""
 
-    def __init__(self):
-        self.embedding_model = get_image_embedding_model()
-        self.vector_store = VectorStore()
+    def __init__(self, embedding_model=None, vector_store=None):
+        self.embedding_model = embedding_model
+        self.vector_store = vector_store
 
     def text2image_search(self, kb_id: str, queries: list[str], limit: int = 10, score_threshold: float = 0.0,
                           filter_conditions: Optional[Dict] = None):
@@ -37,12 +37,12 @@ class ImageRetriever:
         if not filter_conditions:
             filter_conditions = {}
         filter_conditions.update({"kb_id": kb_id})
-        text_embeddings = self.embedding_model.encode_text_batch(queries)
+        text_embeddings = self._embedding_model().encode_text_batch(queries)
         if self._has_empty_vectors(text_embeddings):
             logger.warning("text2image_search skipped because image embedding returned empty vectors")
             return [[] for _ in queries]
         try:
-            return self.vector_store.search_image_vector(
+            return self._vector_store().search_image_vector(
                 query_vectors=text_embeddings,
                 limit=limit,
                 score_threshold=score_threshold,
@@ -59,8 +59,8 @@ class ImageRetriever:
         if not filter_conditions:
             filter_conditions = {}
         filter_conditions.update({"kb_id": kb_id})
-        image_embeddings = self.embedding_model.encode_image_batch([image])
-        return self.vector_store.search_image_vector(
+        image_embeddings = self._embedding_model().encode_image_batch([image])
+        return self._vector_store().search_image_vector(
             query_vectors=image_embeddings,
             limit=limit,
             score_threshold=score_threshold,
@@ -73,12 +73,12 @@ class ImageRetriever:
         if not filter_conditions:
             filter_conditions = {}
         filter_conditions.update({"kb_id": kb_id})
-        text_embeddings = self.embedding_model.encode_text_batch(queries)
+        text_embeddings = self._embedding_model().encode_text_batch(queries)
         if self._has_empty_vectors(text_embeddings):
             logger.warning("text2page_search skipped because image embedding returned empty vectors")
             return [[] for _ in queries]
         try:
-            return self.vector_store.search_page_vector(
+            return self._vector_store().search_page_vector(
                 query_vectors=text_embeddings,
                 limit=limit,
                 score_threshold=score_threshold,
@@ -95,8 +95,8 @@ class ImageRetriever:
         if not filter_conditions:
             filter_conditions = {}
         filter_conditions.update({"kb_id": kb_id})
-        image_embeddings = self.embedding_model.encode_image_batch([image])
-        return self.vector_store.search_page_vector(
+        image_embeddings = self._embedding_model().encode_image_batch([image])
+        return self._vector_store().search_page_vector(
             query_vectors=image_embeddings,
             limit=limit,
             score_threshold=score_threshold,
@@ -108,3 +108,13 @@ class ImageRetriever:
         if not vectors:
             return True
         return any(not vector for vector in vectors)
+
+    def _embedding_model(self):
+        if self.embedding_model is None:
+            self.embedding_model = get_image_embedding_model()
+        return self.embedding_model
+
+    def _vector_store(self):
+        if self.vector_store is None:
+            self.vector_store = VectorStore()
+        return self.vector_store
