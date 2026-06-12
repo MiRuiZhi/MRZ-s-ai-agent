@@ -1,21 +1,20 @@
 # MRZ's AI Agent
 
-一个从 Java 多智能体项目重构而来的 **Python + C++ Agent 后端学习与作品集项目**。
+一个从 0 到 1 搭建的 **Python + C++ Agent 后端学习与作品集项目**。
 
-这个版本保留原项目最有价值的业务思想：`ReAct`、`PlanSolve`、工具调用、SSE 流式输出、执行账本、文件产物和前端工作台；同时把主后端重建为更容易学习、调试和面试讲解的 Python 技术栈，并用 C++ 封装底层受控执行边界。
+项目围绕现代 AI Agent 后端的核心能力展开：`ReAct`、`PlanSolve`、工具调用、SSE 流式输出、执行账本、文件产物和前端工作台。主后端使用 Python 技术栈实现，底层受控执行边界由 C++ worker 承担，整体目标是做出一套清晰、可运行、可部署、可讲解的 Agent Runtime。
 
-> 当前仓库仍保留 `Reactor-agent-*` Java 源码，作为学习对照和迁移来源；真正运行的重构版集中在 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`ui` 和 Docker Compose。
+> 当前可运行主链路集中在 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`ui` 和 Docker Compose。
 
 ## 项目定位
 
-这个仓库不是简单换语言，而是一次面向学习、工程化和面试表达的系统性重构：
+这个仓库不是一个简单 demo，而是一套面向学习、工程化和面试表达的系统性 Agent 后端：
 
-- 从 Java/Spring 风格的 Agent 后端中抽出核心业务语义。
-- 用 Python FastAPI 重建 API、SSE、Agent 编排、数据库账本和管理接口。
+- 用 Python FastAPI 搭建 API、SSE、Agent 编排、数据库账本和管理接口。
 - 用 `asyncio` 表达 ReAct 与 PlanSolve 中的并发工具调用和并发子任务。
-- 复用并整理原有 `reactor-tool`，避免为了换语言而丢掉搜索、报告、代码解释器、图片生成、MRAG 等工具能力。
+- 建立 `reactor-tool` 工具运行时，承载搜索、报告、代码解释器、图片生成、MRAG 等工具能力。
 - 用 C++ worker 承担低层执行边界，让脚本执行、超时、stdout/stderr、产物扫描和 hash 计算从 Python 业务代码中分离出来。
-- 保留 React 前端，并通过 nginx 做同源代理，降低前端迁移成本。
+- 使用 React 前端，并通过 nginx 做同源代理，串起完整体验。
 - 补充使用手册、设计说明、项目演进记录和面试讲解材料，方便从源码学习到表达。
 
 ## 作品集导航
@@ -25,21 +24,21 @@
 | 想了解什么 | 推荐入口 |
 | --- | --- |
 | 项目一句话价值 | 本 README 的“面试讲法” |
-| 做了哪些工程改造 | [PROJECT_STORY.md](PROJECT_STORY.md) |
+| 做了哪些工程设计 | [PROJECT_STORY.md](PROJECT_STORY.md) |
 | 功能阶段和版本演进 | [CHANGELOG.md](CHANGELOG.md) |
 | 怎么本地跑起来 | [USAGE.md](USAGE.md) |
 | 架构和模块细节 | [DESIGN.md](DESIGN.md) |
 | 面试追问怎么回答 | [architecture/interview-notes.md](architecture/interview-notes.md) |
 
-## 为什么重构
+## 为什么这样设计
 
-原始项目的业务设计很好，但对不熟悉 Java/Spring 的学习者来说，理解成本偏高。本重构版的目标是：
+Agent 系统不仅要能调用模型，还要能组织上下文、调用工具、记录过程、流式反馈、管理产物，并能在本地和服务器稳定部署。因此这个项目的目标是：
 
-- 用 Python FastAPI 重建 Agent API、SSE、编排和持久化主链路。
+- 用 Python FastAPI 搭建 Agent API、SSE、编排和持久化主链路。
 - 用 `asyncio` 表达 ReAct 工具并发和 PlanSolve 子任务并发。
-- 复用原有 `reactor-tool`，保留 deep search、report、code interpreter、web fetch、image generation、MRAG 等工具能力。
+- 通过 `reactor-tool` 提供 deep search、report、code interpreter、web fetch、image generation、MRAG 等工具能力。
 - 用 C++ worker 处理低层命令执行、超时、退出码、stdout/stderr、产物扫描和 sha256。
-- 保留 React 前端，只做 API/SSE 兼容。
+- 使用 React 前端承载对话、工具结果和文件产物展示。
 - 提供 Docker Compose 单机部署，方便本地学习和后续上线。
 
 ## 核心亮点
@@ -47,9 +46,9 @@
 - **两种 Agent 模式**：`deepThink=0` 路由到 ReAct，`deepThink=1` 路由到 PlanSolve。
 - **SSE 全 JSON 协议**：每一帧都是前端可直接 `JSON.parse` 的 JSON。
 - **SQL 执行账本**：run、LLM invocation、tool invocation、artifact、session summary 全部落账。
-- **工具运行时复用**：保留并整理 `reactor-tool`，Python Agent 通过 HTTP 调用工具服务。
+- **工具运行时解耦**：`reactor-tool` 独立承载工具能力，Python Agent 通过 HTTP 调用工具服务。
 - **C++ 执行边界**：低层脚本/命令执行不混入 Python 业务编排。
-- **前端兼容**：保留现有 React UI，nginx 统一同源代理。
+- **前端工作台**：React UI 承载对话和产物展示，nginx 统一同源代理。
 - **Docker 单机部署**：MySQL、Qdrant、agent-api、tool-runtime、ui、nginx 一套 compose 启动。
 - **学习友好**：提供使用手册、设计文档、架构图和面试讲解材料。
 
@@ -77,7 +76,6 @@ flowchart TB
     Cpp --> ToolVolume["tool-output volume\n文件产物"]
     FileService --> ToolVolume
 
-    Java["Reactor-agent-* Java 源码\n保留作学习对照，不进入 Docker 构建"] -.-> API
 ```
 
 ## 运行时模块
@@ -90,7 +88,6 @@ flowchart TB
 | `ui` | `ui` | React 前端工作台 |
 | `nginx` | `deploy/nginx.conf` | 同源代理前端、agent-api、tool-runtime |
 | `docs` | `USAGE.md`、`DESIGN.md`、`architecture/` | 使用说明、设计说明、面试材料 |
-| `legacy Java` | `Reactor-agent-*` | 原 Java 源码，作为对照和迁移参考 |
 
 ## Agent 模式
 
@@ -305,7 +302,7 @@ docker compose config
 
 仍需继续生产化：
 
-- 完整迁移 Java dataAgent/NL2SQL。
+- 完善 dataAgent/NL2SQL 能力。
 - Admin DTO 强类型化。
 - 正式鉴权和权限控制。
 - 更完整的 tool-runtime 安全沙箱。
@@ -323,18 +320,17 @@ docker compose config
 
 `.dockerignore` 已排除：
 
-- Java 旧模块
 - assets/runtime 文档资产
 - 虚拟环境和缓存
 - `.exe`
 
-因此 Java 源码保留在仓库中用于学习对照，但不进入 Docker 构建上下文。
+因此 Docker 构建上下文只保留运行所需内容，镜像构建更轻量。
 
 ## 文档
 
 - [USAGE.md](USAGE.md)：完整使用手册。
 - [DESIGN.md](DESIGN.md)：细粒度设计说明和统一架构图。
-- [PROJECT_STORY.md](PROJECT_STORY.md)：项目背景、重构思路、关键取舍和面试表达。
+- [PROJECT_STORY.md](PROJECT_STORY.md)：项目背景、搭建思路、关键取舍和面试表达。
 - [CHANGELOG.md](CHANGELOG.md)：按版本阶段整理的中文变更记录。
 - [deployment/single-node-docker.md](deployment/single-node-docker.md)：单机 Docker 部署。
 - [architecture/python-cpp-rewrite.md](architecture/python-cpp-rewrite.md)：架构速览。
@@ -344,4 +340,4 @@ docker compose config
 
 可以这样概括这个项目：
 
-> 我把一个 Java 多智能体项目重构成 Python+C++ 技术栈：Python FastAPI 承担 API、SSE、ReAct、PlanSolve、SQL 账本和工具编排；原有 reactor-tool 继续提供搜索、报告、代码解释器、图片生成和 MRAG 等工具能力；C++ worker 只负责低层受控执行边界，例如超时、退出码、stdout/stderr、文件产物扫描和 sha256。这个设计保留了原项目的业务语义，又让架构更清晰、更容易部署和讲解。
+> 我搭建了一套 Python+C++ AI Agent 后端：Python FastAPI 承担 API、SSE、ReAct、PlanSolve、SQL 账本和工具编排；reactor-tool 提供搜索、报告、代码解释器、图片生成和 MRAG 等工具能力；C++ worker 负责低层受控执行边界，例如超时、退出码、stdout/stderr、文件产物扫描和 sha256。这个设计把 Agent 编排、工具运行、执行边界和部署链路拆得比较清楚，适合继续扩展成生产级系统。
