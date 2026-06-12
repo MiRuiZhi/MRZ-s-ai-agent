@@ -1,5 +1,6 @@
 import mimetypes
 import os
+from pathlib import Path
 from urllib.parse import quote, unquote
 
 from fastapi import APIRouter, File, Form, UploadFile
@@ -8,6 +9,7 @@ from fastapi.responses import JSONResponse, Response, FileResponse
 from reactor_tool.model.protocal import FileRequest, FileListRequest, FileUploadRequest, get_file_id, get_legacy_file_id
 from reactor_tool.util.middleware_util import RequestHandlerRoute
 from reactor_tool.db.file_table_op import (
+    FileDB,
     FileInfoOp,
     get_file_preview_url,
     get_file_download_url,
@@ -27,6 +29,12 @@ async def _get_file_info_by_request_and_name(request_id: str, raw_file_name: str
     legacy_file_id = get_legacy_file_id(request_id, raw_file_name)
     file_info = await FileInfoOp.get_by_file_id(file_id=legacy_file_id)
     return file_info, normalized_file_name
+
+
+def _is_file_inside_save_root(file_path: str) -> bool:
+    save_root = Path(FileDB._work_dir).resolve()
+    candidate = Path(file_path).resolve()
+    return save_root == candidate or save_root in candidate.parents
 
 
 @router.post("/get_file")
@@ -93,7 +101,7 @@ async def get_file_list(body: FileListRequest):
 async def download_file(file_id: str, file_name: str):
     # TODO 目前 file_id 实际上是 request_id，后续统一修改
     file_info, file_name = await _get_file_info_by_request_and_name(file_id, file_name)
-    if not file_info or not os.path.exists(file_info.file_path):
+    if not file_info or not os.path.exists(file_info.file_path) or not _is_file_inside_save_root(file_info.file_path):
         return Response(content="File not found", status_code=404)
     return FileResponse(file_info.file_path, filename=os.path.basename(file_name))
 
@@ -102,7 +110,7 @@ async def download_file(file_id: str, file_name: str):
 async def preview_file(file_id: str, file_name: str):
     # TODO 目前 file_id 实际上是 request_id，后续统一修改
     file_info, file_name = await _get_file_info_by_request_and_name(file_id, file_name)
-    if not file_info or not os.path.exists(file_info.file_path):
+    if not file_info or not os.path.exists(file_info.file_path) or not _is_file_inside_save_root(file_info.file_path):
         return Response(content="File not found", status_code=404)
 
     disposition = "inline"
@@ -127,4 +135,3 @@ async def preview_file(file_id: str, file_name: str):
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
         }
     )
-

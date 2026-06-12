@@ -4,11 +4,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent_api.api.routes import router
+from agent_api.settings import Settings
 from agent_api.settings import get_settings
+
+
+def _validate_cors_settings(settings: Settings) -> None:
+    environment = settings.environment.lower()
+    if environment in {"prod", "production"} and "*" in settings.cors_origins:
+        raise ValueError("CORS wildcard is not allowed in production")
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    _validate_cors_settings(settings)
     app = FastAPI(title="Reactor Agent API", version="0.1.0")
     app.add_middleware(
         CORSMiddleware,

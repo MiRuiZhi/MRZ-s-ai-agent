@@ -43,6 +43,31 @@ class CppWorkerContractTest(unittest.TestCase):
         self.assertEqual(response["files"][0]["name"], "result.txt")
         self.assertEqual(response["files"][0]["sha256"], "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
 
+    def test_worker_reports_only_files_created_or_changed_by_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            binary = self._compile_worker(tmp_path)
+            workspace = tmp_path / "workspace"
+            workspace.mkdir()
+            (workspace / "preexisting.txt").write_text("do not report", encoding="utf-8")
+            payload = {
+                "command": "python3 -c \"from pathlib import Path; Path('result.txt').write_text('hello')\"",
+                "cwd": str(workspace),
+                "timeoutSeconds": 10,
+                "collectFiles": True,
+            }
+            proc = subprocess.run(
+                [str(binary)],
+                input=json.dumps(payload),
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+
+        response = json.loads(proc.stdout)
+        self.assertTrue(response["success"])
+        self.assertEqual(["result.txt"], [file_item["name"] for file_item in response["files"]])
+
     def test_worker_rejects_cwd_outside_configured_root(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)

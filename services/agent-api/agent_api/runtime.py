@@ -86,7 +86,12 @@ class AgentRuntime:
                     break
                 yield item
         finally:
-            await task
+            if not task.done():
+                task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
     def _llm(self, agent_name: str, query: str, model: str):
         if self.settings.fake_llm or not self.settings.openai_api_key:

@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -270,6 +271,31 @@ struct CommandResult {
     std::string output;
 };
 
+struct FileMeta {
+    uintmax_t size = 0;
+    fs::file_time_type modified_at{};
+};
+
+using FileSnapshot = std::map<std::string, FileMeta>;
+
+static FileSnapshot snapshot_files(const fs::path& cwd) {
+    FileSnapshot snapshot;
+    if (!fs::exists(cwd)) {
+        return snapshot;
+    }
+    for (const auto& entry : fs::recursive_directory_iterator(cwd)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        fs::path rel = fs::relative(entry.path(), cwd);
+        snapshot[rel.generic_string()] = FileMeta{
+            entry.file_size(),
+            fs::last_write_time(entry.path())
+        };
+    }
+    return snapshot;
+}
+
 static CommandResult run_command(const std::string& command, const std::string& cwd, int timeout_seconds) {
     int pipefd[2];
     if (pipe(pipefd) != 0) {
@@ -362,7 +388,7 @@ static CommandResult run_command(const std::string& command, const std::string& 
     return result;
 }
 
-static std::string collect_files_json(const fs::path& cwd) {
+static std::string collect_files_json(const fs::path& cwd, const FileSnapshot& baseline) {
     std::ostringstream out;
     out << "[";
     bool first = true;
@@ -372,12 +398,25 @@ static std::string collect_files_json(const fs::path& cwd) {
                 continue;
             }
             fs::path rel = fs::relative(entry.path(), cwd);
+            std::string rel_name = rel.generic_string();
+            FileMeta current{
+                entry.file_size(),
+                fs::last_write_time(entry.path())
+            };
+            auto previous = baseline.find(rel_name);
+            if (
+                previous != baseline.end()
+                && previous->second.size == current.size
+                && previous->second.modified_at == current.modified_at
+            ) {
+                continue;
+            }
             if (!first) {
                 out << ",";
             }
             first = false;
             out << "{"
-                << "\"name\":\"" << json_escape(rel.generic_string()) << "\","
+                << "\"name\":\"" << json_escape(rel_name) << "\","
                 << "\"path\":\"" << json_escape(entry.path().string()) << "\","
                 << "\"size\":" << entry.file_size() << ","
                 << "\"sha256\":\"" << sha256_file(entry.path()) << "\""
@@ -399,6 +438,7 @@ int main() {
             throw std::runtime_error("command is required");
         }
 
+        FileSnapshot baseline = collect_files ? snapshot_files(fs::path(cwd)) : FileSnapshot{};
         CommandResult command_result = run_command(command, cwd, timeout_seconds);
         std::cout << "{"
                   << "\"success\":" << (command_result.success ? "true" : "false") << ","
@@ -406,7 +446,7 @@ int main() {
                   << "\"timedOut\":" << (command_result.timed_out ? "true" : "false") << ","
                   << "\"stdout\":\"" << json_escape(command_result.output) << "\","
                   << "\"stderr\":\"\","
-                  << "\"files\":" << (collect_files ? collect_files_json(fs::path(cwd)) : "[]")
+                  << "\"files\":" << (collect_files ? collect_files_json(fs::path(cwd), baseline) : "[]")
                   << "}" << std::endl;
         return 0;
     } catch (const std::exception& exc) {

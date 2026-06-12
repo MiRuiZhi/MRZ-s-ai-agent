@@ -58,6 +58,55 @@ class AgentCoreTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("tool_call", emitted_types)
         self.assertIn("result", emitted_types)
 
+    async def test_react_agent_records_failed_tool_and_continues(self):
+        events = EventCollector()
+        ledger = InMemoryLedger()
+        tools = ToolCollection()
+
+        async def broken_tool(arguments, context):
+            raise RuntimeError("tool exploded")
+
+        tools.add_local_tool("broken", "Broken tool", broken_tool)
+        llm = ScriptedLLM(
+            [
+                ToolCallResponse(
+                    content="I should call broken.",
+                    tool_calls=[
+                        ToolCall(
+                            id="call-broken",
+                            name="broken",
+                            arguments={"text": "hello"},
+                        )
+                    ],
+                ),
+                ToolCallResponse(content="Recovered from failed tool.", tool_calls=[]),
+            ]
+        )
+        context = AgentContext(
+            request_id="req-react-failed-tool",
+            session_id="session-1",
+            query="call broken",
+            events=events,
+            ledger=ledger,
+            tools=tools,
+        )
+
+        result = await ReactAgent(context=context, llm=llm, max_steps=4).run()
+
+        self.assertEqual(result, "Recovered from failed tool.")
+        self.assertEqual(len(ledger.tool_invocations), 1)
+        self.assertEqual(ledger.tool_invocations[0].status, "failed")
+        self.assertEqual(ledger.tool_invocations[0].error_msg, "tool exploded")
+        failed_events = [
+            event
+            for event in events.items
+            if event.type == "tool_call"
+            and event.payload.get("toolCallId") == "call-broken"
+            and event.payload.get("status") == "failed"
+        ]
+        self.assertEqual(1, len(failed_events))
+        self.assertIn("tool exploded", context.memory.messages[-2].content)
+
     async def test_plan_solve_runs_parallel_subtasks_and_summarizes(self):
         events = EventCollector()
         ledger = InMemoryLedger()

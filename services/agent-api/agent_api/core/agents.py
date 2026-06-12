@@ -55,7 +55,15 @@ class BaseAgent:
             message_id=tool_call.id,
             is_final=False,
         )
-        result = await self.context.tools.execute(tool_call.name, tool_call.arguments, self.context)
+        try:
+            result = await self.context.tools.execute(tool_call.name, tool_call.arguments, self.context)
+        except Exception as exc:
+            result = ToolResult(
+                tool_result=f"Tool {tool_call.name} Error.",
+                llm_observation=f"Tool {tool_call.name} Error: {exc}",
+                failed=True,
+                error_msg=str(exc),
+            )
         status = "failed" if result.failed else "success"
         self.context.ledger.finish_tool(
             ledger_record,
