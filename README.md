@@ -1,56 +1,41 @@
 # MRZ's AI Agent
 
-一个从 0 到 1 搭建的 **Python + C++ Agent 后端学习与作品集项目**。
+MRZ's AI Agent 是一套基于 **Python + C++** 的 AI Agent 后端运行时。
 
-项目围绕现代 AI Agent 后端的核心能力展开：`ReAct`、`PlanSolve`、工具调用、SSE 流式输出、执行账本、文件产物和前端工作台。主后端使用 Python 技术栈实现，底层受控执行边界由 C++ worker 承担，整体目标是做出一套清晰、可运行、可部署、可讲解的 Agent Runtime。
+项目围绕现代 Agent 系统的核心链路搭建：`ReAct`、`PlanSolve`、工具调用、SSE 流式输出、执行账本、文件产物、React 前端工作台和 Docker 单机部署。主后端使用 FastAPI 实现，工具运行时通过 HTTP 解耦，底层受控执行由 C++ worker 承担。
 
-> 当前可运行主链路集中在 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`ui` 和 Docker Compose。
+当前可运行主链路集中在：
 
-## 项目定位
+- `services/agent-api`
+- `services/cpp-worker`
+- `reactor-tool`
+- `ui`
+- `docker-compose.yml`
+- `deploy/nginx.conf`
 
-这个仓库不是一个简单 demo，而是一套面向学习、工程化和面试表达的系统性 Agent 后端：
+## 项目概览
 
-- 用 Python FastAPI 搭建 API、SSE、Agent 编排、数据库账本和管理接口。
-- 用 `asyncio` 表达 ReAct 与 PlanSolve 中的并发工具调用和并发子任务。
-- 建立 `reactor-tool` 工具运行时，承载搜索、报告、代码解释器、图片生成、MRAG 等工具能力。
-- 用 C++ worker 承担低层执行边界，让脚本执行、超时、stdout/stderr、产物扫描和 hash 计算从 Python 业务代码中分离出来。
-- 使用 React 前端，并通过 nginx 做同源代理，串起完整体验。
-- 补充使用手册、设计说明、项目演进记录和面试讲解材料，方便从源码学习到表达。
+核心目标：
 
-## 作品集导航
+- 提供兼容前端的 Agent API 和 SSE 流式输出。
+- 支持 `deepThink=0` 的 ReAct 模式。
+- 支持 `deepThink=1` 的 PlanSolve 模式。
+- 支持工具调用、工具结果回放和文件产物登记。
+- 使用 SQLAlchemy + Alembic 管理数据库模型和版本。
+- 使用 MySQL 持久化会话、run、LLM invocation、tool invocation 和 artifact。
+- 使用 Qdrant 支撑向量检索类工具。
+- 使用 C++ worker 处理受控命令执行、超时、stdout/stderr、退出码、文件扫描和 sha256。
+- 使用 Docker Compose 启动 `nginx`、`ui`、`agent-api`、`tool-runtime`、`mysql`、`qdrant`。
 
-如果你是 HR 或面试官，可以按下面顺序看：
+## 核心能力
 
-| 想了解什么 | 推荐入口 |
-| --- | --- |
-| 项目一句话价值 | 本 README 的“面试讲法” |
-| 做了哪些工程设计 | [PROJECT_STORY.md](PROJECT_STORY.md) |
-| 功能阶段和版本演进 | [CHANGELOG.md](CHANGELOG.md) |
-| 怎么本地跑起来 | [USAGE.md](USAGE.md) |
-| 架构和模块细节 | [DESIGN.md](DESIGN.md) |
-| 面试追问怎么回答 | [architecture/interview-notes.md](architecture/interview-notes.md) |
-
-## 为什么这样设计
-
-Agent 系统不仅要能调用模型，还要能组织上下文、调用工具、记录过程、流式反馈、管理产物，并能在本地和服务器稳定部署。因此这个项目的目标是：
-
-- 用 Python FastAPI 搭建 Agent API、SSE、编排和持久化主链路。
-- 用 `asyncio` 表达 ReAct 工具并发和 PlanSolve 子任务并发。
-- 通过 `reactor-tool` 提供 deep search、report、code interpreter、web fetch、image generation、MRAG 等工具能力。
-- 用 C++ worker 处理低层命令执行、超时、退出码、stdout/stderr、产物扫描和 sha256。
-- 使用 React 前端承载对话、工具结果和文件产物展示。
-- 提供 Docker Compose 单机部署，方便本地学习和后续上线。
-
-## 核心亮点
-
-- **两种 Agent 模式**：`deepThink=0` 路由到 ReAct，`deepThink=1` 路由到 PlanSolve。
-- **SSE 全 JSON 协议**：每一帧都是前端可直接 `JSON.parse` 的 JSON。
-- **SQL 执行账本**：run、LLM invocation、tool invocation、artifact、session summary 全部落账。
-- **工具运行时解耦**：`reactor-tool` 独立承载工具能力，Python Agent 通过 HTTP 调用工具服务。
-- **C++ 执行边界**：低层脚本/命令执行不混入 Python 业务编排。
-- **前端工作台**：React UI 承载对话和产物展示，nginx 统一同源代理。
-- **Docker 单机部署**：MySQL、Qdrant、agent-api、tool-runtime、ui、nginx 一套 compose 启动。
-- **学习友好**：提供使用手册、设计文档、架构图和面试讲解材料。
+- **Agent 编排**：ReAct 主循环、PlanSolve 规划执行循环、最大步数终止和异常状态输出。
+- **SSE 协议**：统一使用 JSON data，便于前端直接解析。
+- **工具系统**：`reactor-tool` 提供 deep search、report、code interpreter、web fetch、image generation、MRAG 等工具。
+- **执行账本**：记录 run、LLM 调用、工具调用、artifact 和会话摘要。
+- **文件产物**：工具输出文件写入 Docker volume，并通过 HTTP 预览和下载。
+- **受控执行**：C++ worker 提供进程执行边界，隔离低层执行细节。
+- **单机部署**：Docker Compose 提供本地和服务器部署基础。
 
 ## 统一架构
 
@@ -75,7 +60,6 @@ flowchart TB
     Tools --> Cpp["cpp-worker\nC++ 受控执行边界"]
     Cpp --> ToolVolume["tool-output volume\n文件产物"]
     FileService --> ToolVolume
-
 ```
 
 ## 运行时模块
@@ -87,13 +71,12 @@ flowchart TB
 | `tool-runtime` | `reactor-tool` | deep search、report、code interpreter、file service、MRAG 等工具 |
 | `ui` | `ui` | React 前端工作台 |
 | `nginx` | `deploy/nginx.conf` | 同源代理前端、agent-api、tool-runtime |
-| `docs` | `USAGE.md`、`DESIGN.md`、`architecture/` | 使用说明、设计说明、面试材料 |
 
 ## Agent 模式
 
 ### ReAct
 
-适合短链路任务。
+适合短链路工具调用任务。
 
 ```mermaid
 flowchart TD
@@ -108,20 +91,20 @@ flowchart TD
 
 ### PlanSolve
 
-适合复杂任务。
+适合多步骤复杂任务。
 
 ```mermaid
 flowchart TD
     A["复杂问题"] --> B["Planning LLM"]
     B --> C{"是否 finish"}
-    C -->|否| D["用 <sep> 拆分并发子任务"]
+    C -->|否| D["拆分并发子任务"]
     D --> E["ExecutorAgent 并发执行"]
     E --> F["结果合并回 planner memory"]
     F --> B
     C -->|是| G["汇总 result SSE"]
 ```
 
-## C++ 在项目中的角色
+## C++ Worker
 
 C++ 不负责 Agent 智能逻辑，也不负责 HTTP、SSE、ORM 或 LLM。
 
@@ -134,10 +117,6 @@ C++ 不负责 Agent 智能逻辑，也不负责 HTTP、SSE、ORM 或 LLM。
 - 扫描执行目录下的文件产物。
 - 计算文件 sha256。
 - 通过 `CPP_WORKER_ROOT` 限制执行目录。
-
-一句话概括：
-
-> Python 负责 Agent 编排和业务协议，C++ 负责工具运行时里的受控执行边界。
 
 ## 快速开始
 
@@ -166,15 +145,15 @@ cp .env.example .env
 REACTOR_FAKE_LLM=true
 ```
 
-这可以在没有模型 Key 的情况下先跑通 API、SSE、数据库和前端。
+该模式可在没有模型 Key 的情况下验证 API、SSE、数据库、前端和工具链路。
 
-### 3. 启动
+### 3. 启动服务
 
 ```bash
 docker compose up --build
 ```
 
-访问：
+访问地址：
 
 - UI：http://localhost:8080
 - agent-api：http://localhost:8000/web/health
@@ -182,7 +161,7 @@ docker compose up --build
 - Qdrant：http://localhost:6333
 - MySQL：localhost:3306
 
-`agent-api` 容器启动时会默认执行：
+`agent-api` 容器启动时默认执行：
 
 ```bash
 alembic -c alembic.ini upgrade head
@@ -202,7 +181,7 @@ REACTOR_PLANNER_MODEL=qwen-plus
 REACTOR_EXECUTOR_MODEL=qwen-plus
 ```
 
-OpenAI、DashScope、Ollama 等 OpenAI-compatible 网关都可以接。
+OpenAI、DashScope、Ollama 等 OpenAI-compatible 网关都可以接入。
 
 ## API 示例
 
@@ -232,7 +211,7 @@ curl -N \
   -H 'Content-Type: application/json' \
   -X POST http://localhost:8000/web/api/v1/gpt/queryAgentStreamIncr \
   -d '{
-    "query": "帮我规划一份 Agent 学习路线",
+    "query": "帮我规划一份报告生成流程",
     "sessionId": "session-plan-001",
     "deepThink": 1
   }'
@@ -280,7 +259,7 @@ Docker Compose 配置检查：
 docker compose config
 ```
 
-## 当前实现状态
+## 当前状态
 
 已完成：
 
@@ -292,15 +271,15 @@ docker compose config
 - fake/demo LLM
 - tool-runtime HTTP adapter
 - SQLAlchemy 账本
-- Alembic migration
+- Alembic 数据库版本管理
 - Admin 通用 CRUD 持久化
 - 文件上传转发
-- dataAgent SSE 兼容占位
+- dataAgent SSE 兼容入口
 - C++ worker
 - Docker Compose 单机部署配置
-- 项目瘦身和 Docker build context 瘦身
+- Docker build context 瘦身
 
-仍需继续生产化：
+后续生产化方向：
 
 - 完善 dataAgent/NL2SQL 能力。
 - Admin DTO 强类型化。
@@ -309,35 +288,9 @@ docker compose config
 - 生产级日志、指标、Tracing。
 - 完整 Docker build/up 环境验证。
 
-## 项目瘦身说明
+## 部署与文档
 
-当前仓库已经删除不参与运行的本地生成物和旧平台二进制：
-
-- 删除 `services/agent-api/.venv`
-- 删除 Python `__pycache__` 和 `*.pyc`
-- 删除 `.DS_Store`、`.codegraph`
-- 删除 `reactor-tool` 下 Windows-only 小红书 MCP `.exe`
-
-`.dockerignore` 已排除：
-
-- assets/runtime 文档资产
-- 虚拟环境和缓存
-- `.exe`
-
-因此 Docker 构建上下文只保留运行所需内容，镜像构建更轻量。
-
-## 文档
-
-- [USAGE.md](USAGE.md)：完整使用手册。
-- [DESIGN.md](DESIGN.md)：细粒度设计说明和统一架构图。
-- [PROJECT_STORY.md](PROJECT_STORY.md)：项目背景、搭建思路、关键取舍和面试表达。
-- [CHANGELOG.md](CHANGELOG.md)：按版本阶段整理的中文变更记录。
+- [USAGE.md](USAGE.md)：运行、配置、接口调用和排障。
+- [DESIGN.md](DESIGN.md)：模块设计、数据模型、SSE 协议和执行链路。
 - [deployment/single-node-docker.md](deployment/single-node-docker.md)：单机 Docker 部署。
-- [architecture/python-cpp-rewrite.md](architecture/python-cpp-rewrite.md)：架构速览。
-- [architecture/interview-notes.md](architecture/interview-notes.md)：面试讲解稿和追问答案。
-
-## 面试讲法
-
-可以这样概括这个项目：
-
-> 我搭建了一套 Python+C++ AI Agent 后端：Python FastAPI 承担 API、SSE、ReAct、PlanSolve、SQL 账本和工具编排；reactor-tool 提供搜索、报告、代码解释器、图片生成和 MRAG 等工具能力；C++ worker 负责低层受控执行边界，例如超时、退出码、stdout/stderr、文件产物扫描和 sha256。这个设计把 Agent 编排、工具运行、执行边界和部署链路拆得比较清楚，适合继续扩展成生产级系统。
+- [architecture/python-cpp-rewrite.md](architecture/python-cpp-rewrite.md)：架构说明。
