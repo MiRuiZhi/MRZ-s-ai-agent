@@ -64,4 +64,4 @@ docker run --rm -v ai-agent_mysql-data:/data -v "$PWD/backup:/backup" alpine \
 - `agent-api` 无模型 Key 仍能回复：这是 fake LLM 模式，用来验证链路。
 - 文件预览打不开：确认 `FILE_SERVER_URL=http://localhost/tool/v1/file_tool`。
 - DeepSearch 不工作：先确认 `tool-runtime` 日志，再检查 `OPENAI_*`、`DEEPSEARCH_*` 和搜索引擎配置。
-- 数据库迁移失败：确认 MySQL healthcheck 已通过，再查看 `docker compose logs agent-api`。
+- 数据库版本更新失败：确认 MySQL healthcheck 已通过，再查看 `docker compose logs agent-api`。

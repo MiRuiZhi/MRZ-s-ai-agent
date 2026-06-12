@@ -1,71 +1,95 @@
 # 变更记录
 
-本文件按功能阶段整理项目演进，便于快速了解仓库从原始基线到 Python+C++ 重构版的变化。
+本文件按模块整理项目阶段变化，重点记录当前 Python+C++ 主链路的能力、边界和工程化改进。
 
 这里记录的是功能阶段，不伪造开发日期。
 
+## v0.8 运行边界与仓库瘦身
+
+目标：让主链路更稳、更小、更容易理解。
+
+agent-api：
+
+- 工具调用异常会被记录为 failed tool invocation，并把 observation 写回 memory，ReAct 可以继续生成最终回复。
+- SSE 客户端断开时会取消后台 Agent task，避免长时间悬挂。
+- 生产环境拒绝 wildcard CORS 配置。
+
+tool-runtime：
+
+- 文件预览和下载限制在运行时产物目录内，拒绝越界路径。
+- 文件服务测试覆盖嵌套文件名、兼容查询和越界拒绝。
+
+cpp-worker：
+
+- `collectFiles=true` 时只回报本次命令新增或改动的文件。
+- 单测覆盖文件产物过滤、hash 和工作目录越界拒绝。
+
+repo/ui：
+
+- 删除展示样例资产。
+- 删除重复的 `ui/package-lock.json`，前端依赖锁以 `pnpm-lock.yaml` 为准。
+- `.gitignore` 和 `.dockerignore` 改为当前模块口径。
+
 ## v0.7 Python+C++ 主线收敛
 
-目标：删除旧 Java/Maven 后端源码，让仓库主形态和运行链路保持一致。
+目标：让仓库结构和运行链路保持一致，降低理解成本。
 
-变更：
+模块变化：
 
-- 删除 `Reactor-agent-*` 旧 Java 模块。
-- 删除根 `pom.xml` 和依赖旧 Java jar 的 `fill-payload.ps1`。
-- 清理 `.dockerignore`、`.gitignore` 中的旧 Java/Maven 规则。
-- 明确主链路能力由 `services/agent-api`、`reactor-tool`、`services/cpp-worker`、`ui` 和 Docker Compose 承接。
-- 补充 tool-runtime 主链路路由保护测试。
+- `agent-api` 作为唯一 Agent 编排服务。
+- `tool-runtime` 作为唯一工具 HTTP 服务。
+- `cpp-worker` 作为受控执行边界。
+- `ui` 作为前端工作台。
+- Docker Compose 服务列表固定为 `mysql/qdrant/tool-runtime/agent-api/ui/nginx`。
+
+保留能力：
+
+- Agent 对话。
+- ReAct。
+- PlanSolve。
+- SSE JSON。
+- 工具调用。
+- 文件产物。
+- 图片生成。
+- MRAG/RAG。
+- 前端工作台。
+- Docker Compose 部署。
 
 边界：
 
-- 保留 Agent 对话、ReAct、PlanSolve、SSE、工具调用、文件产物、图片生成、MRAG/RAG、前端工作台和 Docker 部署。
-- 不追求旧 Java Admin/DataAgent 全量接口逐项等价迁移。
-- Java 对照依据保留在 Git 历史中，不再保留在当前工作树。
+- dataAgent/NL2SQL 仍是后续强化方向。
+- Admin 使用通用配置表承接前端所需配置流，后续可按资源拆强类型 DTO。
 
-## v0.6 作品集展示与项目复盘
+## v0.6 文档与作品集表达
 
-目标：让 GitHub 展示更清楚，也让面试讲解更顺畅。
+目标：让仓库更适合阅读、复盘和面试讲解。
 
-新增：
+新增与更新：
 
-- 新增 `PROJECT_STORY.md`，说明项目背景、重构目标、技术取舍、核心链路和面试表达。
-- 新增 `CHANGELOG.md`，按版本阶段整理功能演进。
-- README 增加“项目定位”和“作品集导航”。
-- README 文档入口补充项目故事和变更记录。
+- `README.md`：项目入口、模块概览、快速开始、测试命令和文档导航。
+- `PROJECT_STORY.md`：工程复盘、模块职责、技术取舍和表达提纲。
+- `CHANGELOG.md`：按模块记录阶段变化。
+- `DESIGN.md`：服务边界、Agent 循环、数据模型、SSE、工具和部署细节。
+- `USAGE.md`：运行、配置、接口、开发和排障说明。
+- `architecture/interview-notes.md`：面试讲解提纲。
 
-价值：
+## v0.5 架构、使用与部署说明
 
-- HR 可以快速看懂项目亮点。
-- 面试官可以顺着文档深入看架构。
-- 自己复盘时有完整讲稿和技术脉络。
-
-## v0.5 中文架构、使用与面试材料
-
-目标：让项目不只是能跑，还能被清楚解释。
-
-新增：
-
-- `USAGE.md`：完整中文使用手册。
-- `DESIGN.md`：细粒度中文设计说明。
-- `architecture/python-cpp-rewrite.md`：Python+C++ 重构架构速览。
-- `architecture/interview-notes.md`：面试讲解稿和常见追问。
-- `deployment/single-node-docker.md`：单机 Docker 部署说明。
+目标：让项目不只是能跑，还能被清楚解释和部署。
 
 覆盖内容：
 
-- 本地部署。
-- 服务器部署。
-- 环境变量解释。
-- 模型配置。
-- 日志查看。
-- 数据备份。
+- 本地 Docker Compose 启动。
+- OpenAI-compatible 模型配置。
+- Agent API 调用示例。
+- 文件上传、图片生成、会话和 Admin 通用配置接口。
+- tool-runtime 和 C++ worker 本地运行。
+- MySQL、Qdrant、tool-output volume 备份。
 - 常见失败排查。
-- Java 到 Python/C++ 的映射。
-- ReAct 和 PlanSolve 的执行时序。
 
 ## v0.4 单机 Docker 部署方案
 
-目标：让项目可以一键启动，而不是只停留在代码层。
+目标：提供完整的本地/服务器启动闭环。
 
 新增：
 
@@ -79,7 +103,7 @@
 
 - nginx：统一入口和反向代理。
 - ui：React 静态资源。
-- agent-api：Python FastAPI 后端。
+- agent-api：Python FastAPI 编排服务。
 - tool-runtime：工具运行时。
 - mysql：关系型数据库。
 - qdrant：向量检索服务。
@@ -89,11 +113,11 @@
 - nginx 提供同源访问，减少前端跨域问题。
 - `agent-api` 启动时可以自动执行 Alembic migration 和 seed。
 - MySQL、Qdrant、tool-output 使用 Docker volume 持久化。
-- `.dockerignore` 排除缓存、文档资产和无关二进制，减少构建上下文。
+- `.dockerignore` 排除缓存、文档资产和无关文件，减少构建上下文。
 
 ## v0.3 C++ worker 与工具运行时集成
 
-目标：整理原有工具服务，并把低层执行边界从 Python 业务编排中分离出来。
+目标：把低层执行边界从 Python 业务编排中分离出来。
 
 新增：
 
@@ -114,27 +138,27 @@ C++ worker 能力：
 - 文件产物扫描。
 - sha256 计算。
 
-保留和整理的工具能力：
+tool-runtime 能力：
 
-- deep search
-- report
-- code interpreter
-- web fetch
-- file service
-- image generation
-- data analysis
-- MRAG
-- table rag
+- deep search。
+- report。
+- code interpreter。
+- web fetch。
+- file service。
+- image generation。
+- data analysis。
+- MRAG。
+- table rag。
 
-## v0.2 Python agent-api 编排服务
+## v0.2 agent-api 编排服务
 
-目标：用 Python 重建 Java Agent 后端的主业务链路。
+目标：建立 Python Agent 主业务链路。
 
 新增：
 
 - `services/agent-api`
 - FastAPI app factory。
-- 兼容旧前端调用约定的 route。
+- 前端 API 和 SSE route。
 - Pydantic 请求、响应、SSE schema。
 - `ReactAgent`
 - `PlanningAgent`
@@ -163,25 +187,19 @@ C++ worker 能力：
 - 文件上传转发到 tool-runtime。
 - dataAgent SSE 提供前端兼容入口。
 
-## v0.1 原始工程基线
+## v0.1 UI 与工具基础
 
-目标：导入原始工程作为迁移来源和学习对照。
+目标：保留可以直接服务主链路的前端、工具和运行素材。
 
 包含：
 
-- `Reactor-agent-*` Java 源码。
-- 原 React UI。
-- 原 assets/runtime/pom 等工程文件。
-- 原始业务分层和模块结构。
+- React 前端工作台。
+- Python 工具运行时。
+- runtime skills 示例。
+- 基础资产、配置和工程脚手架。
 
 阶段价值：
 
-- 方便对照 Java 到 Python/C++ 的映射。
-- 方便理解原项目的业务语义。
-- 方便面试中说明迁移依据，而不是凭空写一个 demo。
-
-当前处理方式：
-
-- 旧 Java/Maven 后端源码已在 v0.7 从当前工作树删除。
-- 迁移对照依据保留在 Git 历史中。
-- 运行链路以 Python+C++ 重构版为主。
+- 前端可以承载对话、工具事件、文件预览和图片生成。
+- 工具运行时可以承接搜索、报告、代码解释器、图片和 MRAG/RAG。
+- 后续模块可以围绕可运行主链路迭代。

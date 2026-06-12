@@ -1,47 +1,41 @@
 # Python+C++ Agent 使用手册
 
-这份文档说明如何把当前仓库里的 Python+C++ 重构版跑起来、如何切换模型、如何调用核心接口、如何做本地开发和排障。
+这份文档说明如何把当前仓库里的 Python+C++ 主链路跑起来、如何切换模型、如何调用核心接口、如何做本地开发和排障。
 
-当前重构版的定位是：保留历史 Agent 的核心协议和核心运行语义，用 Python FastAPI 承担后端编排，用 `reactor-tool` 承担工具运行时，用 C++ worker 承担受控脚本执行、超时、退出码、产物扫描和哈希计算。
+当前系统的定位是：用 Python FastAPI 承担 Agent 编排和 Web 协议，用 `reactor-tool` 承担工具运行时，用 C++ worker 承担受控脚本执行、超时、退出码、产物扫描和哈希计算。
 
 ## 当前状态
 
 已经实现并验证的部分：
 
 - `agent-api`：FastAPI 后端，包含 ReAct、PlanSolve、SSE、会话、SQL 账本、Admin 兼容 CRUD、文件上传兼容、dataAgent SSE 兼容。
-- `tool-runtime`：继续复用并整理原有 `reactor-tool`，新增 C++ worker 接口。
+- `tool-runtime`：`reactor-tool` 工具 HTTP 服务，集成 C++ worker 接口。
 - `cpp-worker`：C++ JSON-over-stdin worker，支持超时、退出码、stdout/stderr、产物扫描、sha256、路径限制。
 - Docker Compose 配置：`mysql`、`qdrant`、`tool-runtime`、`agent-api`、`ui`、`nginx`。
 - 测试覆盖：Agent 核心、SQL 账本、SSE 协议、文件上传、Admin 持久化、C++ worker。
 
 需要注意的边界：
 
-- 这不是把所有历史业务接口逐字段完全复刻完的最终版，而是一个可继续迭代的 Python+C++ 生产替代基础。
+- 这不是把所有业务接口逐字段完全强类型化的最终版，而是一个可继续迭代的 Python+C++ 生产替代基础。
 - `/data/chatQuery` 目前是前端兼容 SSE，占位输出 `THINK`、空 `CHART_DATA` 和 `READY`，还没有完整强化 NL2SQL 能力。
-- Admin 路由是通用兼容实现，落在 `config_record` 表，不是所有历史 Admin DTO 的逐字段强类型版本。
+- Admin 路由是通用配置实现，落在 `config_record` 表；后续可按高频资源拆强类型 DTO。
 - 本机 Docker daemon 未启动时，不能执行 `docker compose up --build` 或 `docker compose build`。代码层面已经通过 `docker compose config` 校验。
 
 ## 瘦身说明
 
-本项目已经收敛为 Python+C++ 主线，原则是：删除确定不影响主链路运行的生成物、无关二进制和旧 Java/Maven 后端源码，保留当前可运行服务与必要文档。
+本项目按“当前主链路可运行”决定仓库内容，保留运行服务和必要文档，删除展示样例资产、重复锁文件、本地缓存和不参与运行的生成物。
 
-已移除：
+保留的主模块：
 
-- `services/agent-api/.venv`：本地 Python 虚拟环境，约 63MB，可用 `uv venv` 随时重建。
-- `services/agent-api/**/__pycache__` 和 `*.pyc`：Python 编译缓存。
-- `.DS_Store`、`assets/.DS_Store`、`.codegraph`：本地系统/索引生成物。
-- `reactor-tool/xiaohongshu-login-windows-amd64.exe` 和 `reactor-tool/xiaohongshu-mcp-windows-amd64.exe`：Windows-only 小红书 MCP 辅助二进制，不参与当前 Linux Docker 运行时。
-- `Reactor-agent-*` 旧 Java 模块、根 `pom.xml` 和 `fill-payload.ps1`：旧后端源码与旧 jar 打包方式不再参与当前主线。
-
-保留：
-
-- `reactor-tool`：这是当前工具运行时，必须保留。
-- `ui`：当前 React 前端，必须保留。
-- `services/agent-api` 和 `services/cpp-worker`：Python+C++ 重构版核心，必须保留。
+- `reactor-tool`：工具运行时。
+- `ui`：React 前端工作台。
+- `services/agent-api`：Python Agent 编排服务。
+- `services/cpp-worker`：C++ 执行边界。
+- `deploy` 和 `docker-compose.yml`：单机部署配置。
 
 Docker 构建上下文已经通过 `.dockerignore` 进一步瘦身：
 
-- `assets`、`runtime`、文档、缓存、虚拟环境、`.exe` 不进入镜像构建上下文。
+- `assets`、`runtime`、文档、缓存、虚拟环境和非运行资产不进入镜像构建上下文。
 - Docker 镜像只需要 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`ui` 和 `deploy/nginx.conf` 等运行相关内容。
 
 ## 目录速览
@@ -387,7 +381,7 @@ data: {"eventType":"CHART_DATA","data":[]}
 data: {"eventType":"READY"}
 ```
 
-这是为了让前端 dataAgent 工作流先能运行。完整 NL2SQL、表结构召回、SQL 执行和图表数据生成还需要继续迁移。
+这是为了让前端 dataAgent 工作流先能运行。完整 NL2SQL、表结构召回、SQL 执行和图表数据生成还需要继续增强。
 
 ### 会话历史
 
@@ -501,7 +495,7 @@ export REACTOR_LEDGER_BACKEND=memory
 
 ### tool-runtime 本地运行
 
-`reactor-tool` 是原有 Python 工具服务。它的 Dockerfile 已经会把 C++ worker 编译到 `/usr/local/bin/reactor-cpp-worker`。
+`reactor-tool` 是当前工具 HTTP 服务。它的 Dockerfile 已经会把 C++ worker 编译到 `/usr/local/bin/reactor-cpp-worker`。
 
 本地直接跑时，需要参考 `reactor-tool/README.md` 和 `reactor-tool/pyproject.toml` 安装依赖。
 
@@ -811,7 +805,7 @@ docker compose up -d --build
 
 - 正式用户认证和 Admin 权限控制。
 - Admin DTO 强类型化。
-- 完整 NL2SQL/dataAgent 迁移。
+- 完整 NL2SQL/dataAgent 能力。
 - tool-runtime 的资源限制、沙箱和安全策略。
 - C++ worker 更严格的命令白名单或隔离运行用户。
 - 全链路 tracing、指标和告警。

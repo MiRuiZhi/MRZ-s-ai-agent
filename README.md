@@ -1,43 +1,32 @@
 # MRZ's AI Agent
 
-MRZ's AI Agent 是一套基于 **Python + C++** 的 AI Agent 后端运行时。
+MRZ's AI Agent 是一套以 **Python + C++** 为主链路的 AI Agent 运行时。
 
-项目围绕现代 Agent 系统的核心链路搭建：`ReAct`、`PlanSolve`、工具调用、SSE 流式输出、执行账本、文件产物、React 前端工作台和 Docker 单机部署。主后端使用 FastAPI 实现，工具运行时通过 HTTP 解耦，底层受控执行由 C++ worker 承担。
+它把对话编排、工具运行、文件产物、RAG/MRAG、前端工作台和单机部署收敛到一个可以验证、可以继续扩展的仓库里。主后端使用 FastAPI，工具运行时使用独立 HTTP 服务，底层命令执行由 C++ worker 约束边界。
 
-当前仓库主线已经收敛为 Python + C++。旧 Java/Maven 后端源码已从工作树删除，迁移依据保留在 Git 历史和本文档的架构说明中。当前可运行主链路集中在：
+## 模块一览
 
-- `services/agent-api`
-- `services/cpp-worker`
-- `reactor-tool`
-- `ui`
-- `docker-compose.yml`
-- `deploy/nginx.conf`
-
-## 项目概览
-
-核心目标：
-
-- 提供兼容前端的 Agent API 和 SSE 流式输出。
-- 支持 `deepThink=0` 的 ReAct 模式。
-- 支持 `deepThink=1` 的 PlanSolve 模式。
-- 支持工具调用、工具结果回放和文件产物登记。
-- 使用 SQLAlchemy + Alembic 管理数据库模型和版本。
-- 使用 MySQL 持久化会话、run、LLM invocation、tool invocation 和 artifact。
-- 使用 Qdrant 支撑向量检索类工具。
-- 使用 C++ worker 处理受控命令执行、超时、stdout/stderr、退出码、文件扫描和 sha256。
-- 使用 Docker Compose 启动 `nginx`、`ui`、`agent-api`、`tool-runtime`、`mysql`、`qdrant`。
+| 模块 | 路径 | 主要职责 |
+| --- | --- | --- |
+| `agent-api` | `services/agent-api` | FastAPI API、SSE、ReAct、PlanSolve、会话、SQL 账本、文件上传、图片生成转发 |
+| `tool-runtime` | `reactor-tool` | 工具 HTTP 服务、deep search、report、code interpreter、web fetch、image generation、MRAG/RAG、文件服务 |
+| `cpp-worker` | `services/cpp-worker` | JSON-over-stdin C++ worker，负责受控命令执行、超时、退出码、文件产物扫描和 sha256 |
+| `ui` | `ui` | React + TypeScript 前端工作台 |
+| `deploy` | `docker-compose.yml`、`deploy/nginx.conf` | MySQL、Qdrant、agent-api、tool-runtime、ui、nginx 单机编排 |
 
 ## 核心能力
 
-- **Agent 编排**：ReAct 主循环、PlanSolve 规划执行循环、最大步数终止和异常状态输出。
-- **SSE 协议**：统一使用 JSON data，便于前端直接解析。
-- **工具系统**：`reactor-tool` 提供 deep search、report、code interpreter、web fetch、image generation、MRAG 等工具。
-- **执行账本**：记录 run、LLM 调用、工具调用、artifact 和会话摘要。
-- **文件产物**：工具输出文件写入 Docker volume，并通过 HTTP 预览和下载。
-- **受控执行**：C++ worker 提供进程执行边界，隔离低层执行细节。
-- **单机部署**：Docker Compose 提供本地和服务器部署基础。
+- **Agent 对话**：`/web/api/v1/gpt/queryAgentStreamIncr` 和 `/AutoAgent` 两个主入口。
+- **ReAct**：短链路工具调用，支持工具观察写回 memory 并继续推理。
+- **PlanSolve**：复杂任务先规划、再并发执行子任务、最后汇总结果。
+- **SSE**：每帧输出 JSON `data:`，便于前端直接解析和展示。
+- **工具调用**：通过 `tool-runtime` 承接搜索、报告、代码解释器、网页抓取、图片生成、MRAG/RAG 等能力。
+- **文件产物**：工具产物写入 volume，通过文件服务预览和下载。
+- **执行账本**：run、LLM invocation、tool invocation、artifact、session 可落库复盘。
+- **执行边界**：C++ worker 限制工作目录、控制超时、回传退出码和本次命令新增或改动的文件。
+- **部署闭环**：Docker Compose 启动 `mysql/qdrant/tool-runtime/agent-api/ui/nginx`。
 
-## 统一架构
+## 架构
 
 ```mermaid
 flowchart TB
@@ -45,7 +34,7 @@ flowchart TB
 
     Nginx --> UI["ui\nReact 静态资源"]
     Nginx --> API["agent-api\nFastAPI + SSE"]
-    Nginx -->|"/tool/*"| ToolRuntime["reactor-tool :1601\n工具 HTTP 服务"]
+    Nginx -->|"/tool/*"| ToolRuntime["tool-runtime :1601\n工具 HTTP 服务"]
 
     API --> Runtime["runtime.py\n请求转换 + Agent 路由"]
     Runtime --> Core["core\nReAct / PlanSolve / Memory / Events / Tools"]
@@ -62,21 +51,9 @@ flowchart TB
     FileService --> ToolVolume
 ```
 
-## 运行时模块
-
-| 模块 | 路径 | 作用 |
-| --- | --- | --- |
-| `agent-api` | `services/agent-api` | FastAPI API、SSE、Agent 编排、SQL 账本、前端兼容入口 |
-| `cpp-worker` | `services/cpp-worker` | C++ JSON-over-stdin worker，负责受控执行和文件扫描 |
-| `tool-runtime` | `reactor-tool` | deep search、report、code interpreter、file service、MRAG 等工具 |
-| `ui` | `ui` | React 前端工作台 |
-| `nginx` | `deploy/nginx.conf` | 同源代理前端、agent-api、tool-runtime |
-
 ## Agent 模式
 
 ### ReAct
-
-适合短链路工具调用任务。
 
 ```mermaid
 flowchart TD
@@ -91,43 +68,22 @@ flowchart TD
 
 ### PlanSolve
 
-适合多步骤复杂任务。
-
 ```mermaid
 flowchart TD
-    A["复杂问题"] --> B["Planning LLM"]
+    A["复杂任务"] --> B["PlanningAgent"]
     B --> C{"是否 finish"}
-    C -->|否| D["拆分并发子任务"]
+    C -->|否| D["拆分子任务"]
     D --> E["ExecutorAgent 并发执行"]
     E --> F["结果合并回 planner memory"]
     F --> B
     C -->|是| G["汇总 result SSE"]
 ```
 
-## C++ Worker
-
-C++ 不负责 Agent 智能逻辑，也不负责 HTTP、SSE、ORM 或 LLM。
-
-它只承担工具运行层里的底层执行边界：
-
-- 执行受控命令或脚本。
-- 控制超时时间。
-- 捕获退出码。
-- 捕获 stdout/stderr。
-- 扫描执行目录下的文件产物。
-- 计算文件 sha256。
-- 通过 `CPP_WORKER_ROOT` 限制执行目录。
-
 ## 快速开始
 
 ### 1. 准备环境
 
-需要：
-
-- Docker Desktop 或 Docker Engine
-- Docker Compose v2
-
-确认 Docker 已启动：
+需要 Docker Desktop 或 Docker Engine，并启用 Docker Compose v2。
 
 ```bash
 docker info
@@ -145,7 +101,7 @@ cp .env.example .env
 REACTOR_FAKE_LLM=true
 ```
 
-该模式可在没有模型 Key 的情况下验证 API、SSE、数据库、前端和工具链路。
+这个模式不需要模型 Key，可以先验证 API、SSE、数据库、前端和工具链路。
 
 ### 3. 启动服务
 
@@ -170,7 +126,7 @@ python scripts/seed.py
 
 ### 4. 使用真实模型
 
-`.env` 中修改：
+在 `.env` 中修改：
 
 ```bash
 REACTOR_FAKE_LLM=false
@@ -239,17 +195,17 @@ uv run --project services/agent-api \
   -v
 ```
 
-C++ worker：
-
-```bash
-python3 -m unittest discover -s services/cpp-worker/tests -v
-```
-
 tool-runtime：
 
 ```bash
 cd reactor-tool
 uv run python -m unittest discover -s tests -v
+```
+
+C++ worker：
+
+```bash
+python3 -m unittest discover -s services/cpp-worker/tests -v
 ```
 
 C++ 编译检查：
@@ -264,40 +220,27 @@ Docker Compose 配置检查：
 
 ```bash
 docker compose config
+docker compose config --services
 ```
 
-## 当前状态
+## 当前边界
 
-已完成：
+已覆盖主链路：Agent 对话、ReAct、PlanSolve、SSE、工具调用、文件产物、图片生成、MRAG/RAG、前端工作台和 Docker Compose 部署。
 
-- Python FastAPI `agent-api`
-- ReAct 主循环
-- PlanSolve 规划/执行循环
-- SSE JSON 事件
-- OpenAI-compatible LLM adapter
-- fake/demo LLM
-- tool-runtime HTTP adapter
-- SQLAlchemy 账本
-- Alembic 数据库版本管理
-- 前端兼容的 Admin 通用 CRUD 持久化入口
-- 文件上传转发
-- dataAgent SSE 前端兼容入口
-- C++ worker
-- Docker Compose 单机部署配置
-- 旧 Java/Maven 后端源码移除，仓库主线收敛为 Python+C++
+继续生产化时建议补齐：
 
-后续生产化方向：
-
-- 强化 dataAgent/NL2SQL 能力。
+- dataAgent/NL2SQL 深化。
 - Admin DTO 强类型化。
 - 正式鉴权和权限控制。
-- 更完整的 tool-runtime 安全沙箱。
-- 生产级日志、指标、Tracing。
-- 完整 Docker build/up 环境验证。
+- tool-runtime 资源限制和沙箱策略。
+- 全链路日志、指标、Tracing。
 
-## 部署与文档
+## 文档
 
 - [USAGE.md](USAGE.md)：运行、配置、接口调用和排障。
 - [DESIGN.md](DESIGN.md)：模块设计、数据模型、SSE 协议和执行链路。
+- [PROJECT_STORY.md](PROJECT_STORY.md)：项目复盘和表达提纲。
+- [CHANGELOG.md](CHANGELOG.md)：按模块整理的阶段变更。
 - [deployment/single-node-docker.md](deployment/single-node-docker.md)：单机 Docker 部署。
-- [architecture/python-cpp-rewrite.md](architecture/python-cpp-rewrite.md)：架构说明。
+- [architecture/python-cpp-rewrite.md](architecture/python-cpp-rewrite.md)：Python+C++ 架构速览。
+- [architecture/interview-notes.md](architecture/interview-notes.md)：面试讲解提纲。
