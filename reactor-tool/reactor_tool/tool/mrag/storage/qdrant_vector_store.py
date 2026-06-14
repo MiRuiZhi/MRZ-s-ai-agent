@@ -23,16 +23,16 @@ import os
 import uuid
 from typing import List, Dict, Tuple, Optional, Any
 
-import dotenv
 from qdrant_client import QdrantClient, models
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from .base_vector_store import BaseVectorStore, BaseCollectionVectorStore
 from .models.image_chunk_model import ImageChunkModel
 from .models.text_chunk_model import TextChunkModel
 from ..utils.logger_utils import logger
 from reactor_tool.util.qdrant_utils import build_qdrant_client, resolve_shared_qdrant_config
 
-dotenv.load_dotenv()
+load_reactor_tool_dotenv()
 
 
 def _env_bool(name: str, default: bool) -> bool:

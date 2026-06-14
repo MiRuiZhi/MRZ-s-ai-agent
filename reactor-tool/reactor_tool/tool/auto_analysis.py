@@ -10,10 +10,10 @@ from datetime import datetime
 import os
 import re
 from typing import Dict, List
-from dotenv import load_dotenv
 from jinja2 import Template
 import pandas as pd
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from smolagents import PythonInterpreterTool, Tool, ActionStep, ActionOutput, ToolCall, FinalAnswerStep
 from smolagents import CodeAgent
 
@@ -29,7 +29,7 @@ from reactor_tool.tool.analysis_component.insights import InsightType
 from reactor_tool.tool.analysis_component.analysis_tool import GetDataTool, DataTransTool, InsightTool, SaveInsightTool, FinalAnswerTool
 
 
-load_dotenv()
+load_reactor_tool_dotenv()
 
 
 pd.set_option("display.max_columns", None)
@@ -173,4 +173,3 @@ def create_agent(
         max_steps=max_steps,
         return_full_result=return_full_result,
     )
-

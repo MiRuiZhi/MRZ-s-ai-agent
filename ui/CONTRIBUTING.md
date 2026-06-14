@@ -13,13 +13,15 @@
 ## 开发设置
 
 1. 克隆您 fork 的仓库
-2. 安装依赖：`pnpm install`
-3. 启动开发服务器：`pnpm dev`
+2. 启用包管理器：`corepack enable`
+3. 激活 pnpm：`corepack prepare pnpm@10.25.0 --activate`
+4. 安装依赖：`corepack pnpm install`
+5. 启动开发服务器：`corepack pnpm dev`
 
 ## 代码规范
 
 - 我们使用 ESLint 和 Prettier 来保持代码风格的一致性
-- 提交代码前，请运行 `pnpm lint` 和 `pnpm fix` 来检查和修复代码风格问题
+- 提交代码前，请运行 `corepack pnpm lint` 和 `corepack pnpm fix` 来检查和修复代码风格问题
 - 确保您的代码通过了所有的测试
 
 ## 提交 Pull Request

@@ -212,10 +212,11 @@ C++ 不负责 Agent 智能逻辑，不负责 HTTP、SSE、ORM 或模型调用。
 
 ## 7. 瘦身原则
 
-本仓库按“当前主链路可运行”来决定保留内容：
+本仓库按“完整主链路可运行”来决定保留内容：
 
-- 保留 `services/agent-api`、`reactor-tool`、`services/cpp-worker`、`ui`、`deploy`。
-- 删除展示样例资产、重复前端锁文件和不参与运行的生成物。
+- 保留 `services/agent-api`、`reactor-tool`、`services/cpp-worker`、`ui`、`runtime/skills`、`deploy`。
+- 保留默认部署里的 MySQL、Qdrant、MRAG/RAG、图片生成、DeepSearch 和工作区 UI。
+- 删除或忽略展示样例资产、重复前端锁文件、本地缓存和不参与运行的生成物。
 - 前端依赖锁以 `pnpm-lock.yaml` 为准。
 - Docker build context 排除文档、缓存、本地工作流目录和非运行资产。
 

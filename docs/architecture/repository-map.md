@@ -84,6 +84,7 @@ services/cpp-worker
 | --- | --- |
 | `docs/architecture/overview.md` | 架构速览 |
 | `docs/architecture/design.md` | 详细设计 |
+| `docs/development/main-chain-runbook.md` | 完整主链路运行说明 |
 | `docs/development/usage.md` | 使用手册 |
 | `docs/development/testing.md` | 验证清单 |
 | `docs/deployment/single-node-docker.md` | 单机 Docker 部署 |

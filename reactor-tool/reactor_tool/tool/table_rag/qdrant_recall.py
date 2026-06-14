@@ -4,10 +4,10 @@ import time
 import requests
 import json
 
-from dotenv import load_dotenv
 from typing import List, Optional
 from qdrant_client.models import Filter, FieldCondition, MatchValue, MatchAny
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.util.log_util import logger, timer
 from reactor_tool.util.qdrant_utils import (
     EmbeddingClient,
@@ -17,7 +17,7 @@ from reactor_tool.util.qdrant_utils import (
 )
 from reactor_tool.tool.mrag.embedding.text_embedding import get_text_embedding_model
 
-load_dotenv()  # 加载 .env 文件
+load_reactor_tool_dotenv()
 
 
 class QdrantRecall(object):

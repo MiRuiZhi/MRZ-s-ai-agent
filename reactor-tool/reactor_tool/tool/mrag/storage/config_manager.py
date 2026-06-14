@@ -6,9 +6,9 @@
 import os
 from typing import Dict, Optional
 
-import dotenv
+from reactor_tool.config.env import load_reactor_tool_dotenv
 
-dotenv.load_dotenv()
+load_reactor_tool_dotenv()
 
 
 class VectorStoreConfig:

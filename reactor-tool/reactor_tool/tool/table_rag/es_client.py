@@ -1,15 +1,12 @@
 import os
-import os
-
-from dotenv import load_dotenv
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from elasticsearch import Elasticsearch, helpers
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.util.log_util import logger
 
-# 加载 .env 文件
-load_dotenv()
+load_reactor_tool_dotenv()
 
 
 def _trimmed(value):

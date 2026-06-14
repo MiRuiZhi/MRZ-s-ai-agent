@@ -11,14 +11,14 @@ from optparse import OptionParser
 from pathlib import Path
 
 import uvicorn
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.util.middleware_util import UnknownException, HTTPProcessTimeMiddleware
 
-load_dotenv()
+load_reactor_tool_dotenv()
 
 # 压掉已知的第三方库噪音告警，避免排查真实异常时被无关 warning 干扰。
 warnings.filterwarnings(

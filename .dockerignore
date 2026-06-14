@@ -27,7 +27,6 @@ Dockerfile*
 # Non-runtime repository assets and local workflow files.
 assets/
 docs/
-runtime/
 .codegraph/
 CHANGELOG.md
 

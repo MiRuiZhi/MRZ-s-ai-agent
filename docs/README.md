@@ -7,16 +7,17 @@
 1. [项目入口](../README.md)：先看模块、能力和快速开始。
 2. [仓库结构地图](architecture/repository-map.md)：知道每个目录该看什么。
 3. [架构速览](architecture/overview.md)：理解 agent-api、tool-runtime、cpp-worker、ui、deploy 的关系。
-4. [使用手册](development/usage.md)：本地启动、接口调用、模型配置和排障。
-5. [验证清单](development/testing.md)：改完代码或文档后应该跑哪些检查。
-6. [单机 Docker 部署](deployment/single-node-docker.md)：把项目放到本机或服务器跑起来。
+4. [完整主链路运行说明](development/main-chain-runbook.md)：确认默认部署保留范围、`.env` 规则和三种模式验证方法。
+5. [使用手册](development/usage.md)：本地启动、接口调用、模型配置和排障。
+6. [验证清单](development/testing.md)：改完代码或文档后应该跑哪些检查。
+7. [单机 Docker 部署](deployment/single-node-docker.md)：把项目放到本机或服务器跑起来。
 
 ## 文档分区
 
 | 分区 | 内容 |
 | --- | --- |
 | `architecture/` | 架构速览、详细设计、仓库结构地图 |
-| `development/` | 使用手册、测试和验证清单 |
+| `development/` | 完整主链路运行说明、使用手册、测试和验证清单 |
 | `deployment/` | Docker Compose 与单机部署说明 |
 | `project/` | 项目复盘、面试提纲和表达材料 |
 

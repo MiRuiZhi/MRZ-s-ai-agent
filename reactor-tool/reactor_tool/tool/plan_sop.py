@@ -9,15 +9,15 @@ import requests
 from loguru import logger
 from jinja2 import Template
 
-from dotenv import load_dotenv
 from dataclasses import dataclass, fields
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.tool.table_rag.utils import get_rerank
 from reactor_tool.util.log_util import logger, timer
 from reactor_tool.util.prompt_util import get_prompt
 from reactor_tool.util.qdrant_utils import QdrantRecall, EmbeddingClient
 
-load_dotenv()
+load_reactor_tool_dotenv()
 # 工具数量大于此参数时触发工具过滤
 DEFAULT_FILTER_MINIMUM_COUNT = 8
 # 高相关模式阈值（根据query快速选择工具）

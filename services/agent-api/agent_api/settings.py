@@ -12,7 +12,7 @@ except Exception:  # pragma: no cover - import-time fallback for docs/static ins
 
 class Settings(BaseSettings):  # type: ignore[misc]
     if hasattr(BaseSettings, "model_config"):
-        model_config = SettingsConfigDict(env_file=".env", env_prefix="REACTOR_")
+        model_config = SettingsConfigDict(env_file=".env", env_prefix="REACTOR_", extra="ignore")
 
     service_name: str = "reactor-agent-api"
     environment: str = "local"
@@ -26,6 +26,8 @@ class Settings(BaseSettings):  # type: ignore[misc]
     summary_model: str = "gpt-4o-mini"
     fake_llm: bool = False
     ledger_backend: str = "sql"
+    run_migrations: bool = True
+    run_seed: bool = True
     cors_origins: List[str] = ["*"]
     max_steps: int = 10
     max_parallel_tasks: int = 2

@@ -8,8 +8,8 @@ from urllib.parse import urlparse
 
 
 import openai
-from dotenv import load_dotenv
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from qdrant_client import QdrantClient
 from qdrant_client.models import (Filter,
                                   FieldCondition,
@@ -22,7 +22,7 @@ from qdrant_client.models import (Filter,
 
 openai.api_key = "your-openai-key"
 
-load_dotenv()
+load_reactor_tool_dotenv()
 
 
 def _env_bool(name: str, default: bool) -> bool:

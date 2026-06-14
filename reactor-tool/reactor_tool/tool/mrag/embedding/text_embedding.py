@@ -1,13 +1,13 @@
 import os
 from typing import List
 
-import dotenv
 from loguru import logger
 from openai import OpenAI
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from .embedding import TextEmbedding
 
-dotenv.load_dotenv()
+load_reactor_tool_dotenv()
 
 
 class OpenAITextEmbedding(TextEmbedding):

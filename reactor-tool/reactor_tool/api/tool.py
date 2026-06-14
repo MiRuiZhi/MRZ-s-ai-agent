@@ -13,13 +13,13 @@ import os
 import threading
 import time
 
-from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from jinja2 import Template
 from loguru import logger
 from sse_starlette import ServerSentEvent, EventSourceResponse
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.model.code import ActionOutput, CodeOuput
 from reactor_tool.model.protocal import (
     TableRAGRequest,
@@ -44,7 +44,7 @@ from reactor_tool.util.file_util import upload_file
 from reactor_tool.util.report_file_util import sanitize_report_html_content
 from reactor_tool.util.prompt_util import get_prompt
 from reactor_tool.util.middleware_util import RequestHandlerRoute
-load_dotenv()
+load_reactor_tool_dotenv()
 
 
 

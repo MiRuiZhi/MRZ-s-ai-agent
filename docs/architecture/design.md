@@ -102,9 +102,9 @@ flowchart TB
 | `mysql` | Docker service | 持久化会话、run、LLM、tool、artifact、Admin 配置 |
 | `qdrant` | Docker service | 向量检索 |
 
-### 2.1 瘦身边界
+### 2.1 主链路保留和瘦身边界
 
-项目瘦身采用主线收敛策略：删除确定不参与当前 Python+C++ 功能的生成物、展示样例资产、重复依赖锁和本地缓存，让工作树只保留可运行主链路代码。
+项目瘦身采用主链路保留策略：完整保留默认设计中的 `agent-api`、`tool-runtime`、`cpp-worker`、`ui`、MySQL、Qdrant、runtime skills、MRAG/RAG、图片生成、DeepSearch 和工作区 UI，只删除或忽略确定不参与运行的生成物、重复依赖锁、本地缓存和系统索引。
 
 已删除或排除的内容：
 
@@ -120,8 +120,9 @@ flowchart TB
 - `ui`：当前 React UI，必须保留。
 - `services/agent-api`：Python 编排服务，必须保留。
 - `services/cpp-worker`：C++ worker，必须保留。
+- `runtime/skills`：脚本和技能素材，必须保留，Docker 镜像内固定路径为 `/app/runtime/skills`。
 
-`.dockerignore` 额外排除了 assets、runtime、文档、本地缓存、虚拟环境和非运行资产。Docker 镜像只复制 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`ui` 和 `deploy/nginx.conf` 等运行相关内容。
+`.dockerignore` 额外排除了 assets、文档、本地缓存、虚拟环境和非运行资产。Docker 镜像复制 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`runtime/skills`、`ui` 和 `deploy/nginx.conf` 等运行相关内容。
 
 ## 3. 模块职责映射
 
@@ -1165,6 +1166,7 @@ FILE_SAVE_PATH=/app/skilloutput
 
 ```bash
 FILE_SERVER_URL=http://localhost/tool/v1/file_tool
+MYSQL_HOST_PORT=3307
 ```
 
 通过 nginx 时：

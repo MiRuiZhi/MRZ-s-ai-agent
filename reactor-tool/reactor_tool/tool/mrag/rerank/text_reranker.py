@@ -19,10 +19,11 @@ import os
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
-import dotenv
 import requests
 
-dotenv.load_dotenv()
+from reactor_tool.config.env import load_reactor_tool_dotenv
+
+load_reactor_tool_dotenv()
 
 
 class TextReranker(ABC):

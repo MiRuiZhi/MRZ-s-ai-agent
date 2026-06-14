@@ -1,9 +1,9 @@
 import os
 
-import dotenv
 from openai import OpenAI
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.util.log_util import logger
-dotenv.load_dotenv()
+load_reactor_tool_dotenv()
 
 OPENAI_COMPAT_DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) "

@@ -21,9 +21,9 @@
 - Admin 路由是通用配置实现，落在 `config_record` 表；后续可按高频资源拆强类型 DTO。
 - 本机 Docker daemon 未启动时，不能执行 `docker compose up --build` 或 `docker compose build`。代码层面已经通过 `docker compose config` 校验。
 
-## 瘦身说明
+## 主链路保留和瘦身说明
 
-本项目按“当前主链路可运行”决定仓库内容，保留运行服务和必要文档，删除展示样例资产、重复锁文件、本地缓存和不参与运行的生成物。
+本项目按“完整主链路可运行”决定仓库内容，保留运行服务、工作区 UI、工具能力和必要文档，删除或忽略本地缓存、重复锁文件、系统索引和不参与运行的生成物。
 
 保留的主模块：
 
@@ -31,12 +31,16 @@
 - `ui`：React 前端工作台。
 - `services/agent-api`：Python Agent 编排服务。
 - `services/cpp-worker`：C++ 执行边界。
+- `runtime/skills`：脚本和技能素材，Docker 镜像内路径为 `/app/runtime/skills`。
 - `deploy` 和 `docker-compose.yml`：单机部署配置。
 
 Docker 构建上下文已经通过 `.dockerignore` 进一步瘦身：
 
-- `assets`、`runtime`、文档、缓存、虚拟环境和非运行资产不进入镜像构建上下文。
-- Docker 镜像只需要 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`ui` 和 `deploy/nginx.conf` 等运行相关内容。
+- `assets`、文档、缓存、虚拟环境和非运行资产不进入镜像构建上下文。
+- `runtime/skills` 会进入 `tool-runtime` 镜像，保证默认部署保留技能素材入口。
+- Docker 镜像只需要 `services/agent-api`、`services/cpp-worker`、`reactor-tool`、`runtime/skills`、`ui` 和 `deploy/nginx.conf` 等运行相关内容。
+
+完整口径见 [完整主链路运行说明](main-chain-runbook.md)。
 
 ## 目录速览
 
@@ -90,19 +94,21 @@ docker info
 
 如果这里报 `Cannot connect to the Docker daemon`，先启动 Docker Desktop。
 
-### 2. 复制环境变量
+### 2. 配置环境变量
 
-```bash
-cp .env.example .env
-```
-
-默认 `.env.example` 使用 fake LLM：
+默认不需要创建 `.env`。`docker-compose.yml` 已经内置 fake LLM、MySQL、Qdrant、tool-runtime、agent-api、ui 和 nginx 的本地服务默认值：
 
 ```bash
 REACTOR_FAKE_LLM=true
 ```
 
-fake LLM 不需要模型 Key，可以先验证服务、SSE、数据库、前端和工具调用链路。
+fake LLM 不需要模型 Key，可以先验证服务、SSE、数据库、前端和三种主流程。deep search、图片生成、MRAG/RAG 的真实效果仍需要对应外部配置。
+
+只有需要覆盖默认值或接真实模型时，才复制模板；它不是启动前置步骤：
+
+```bash
+cp .env.example .env
+```
 
 ### 3. 启动服务
 
@@ -124,7 +130,9 @@ docker compose up -d --build
 - agent-api 健康检查：http://localhost:8000/web/health
 - tool-runtime：http://localhost:1601
 - Qdrant：http://localhost:6333
-- MySQL：localhost:3306
+- MySQL：localhost:3307（容器内仍为 3306，可用 `MYSQL_HOST_PORT` 覆盖宿主端口）
+
+端口冲突时，在 `.env` 里覆盖 `NGINX_HOST_PORT`、`AGENT_API_HOST_PORT`、`TOOL_RUNTIME_HOST_PORT`、`QDRANT_HOST_PORT` 或 `MYSQL_HOST_PORT`。
 
 ### 5. 数据库初始化
 
@@ -510,6 +518,8 @@ CPP_WORKER_BIN=/path/to/reactor-cpp-worker
 CPP_WORKER_ROOT=/tmp/reactor-tool-output
 ```
 
+这些变量请写到 `reactor-tool/.env`，不要写到仓库根目录 `.env`。根目录 `.env` 只给 Docker Compose 覆盖跨服务变量使用。
+
 ### C++ worker 本地编译
 
 直接用 g++：
@@ -546,8 +556,10 @@ export CPP_WORKER_ROOT=/tmp/cpp-worker-demo
 
 ```bash
 cd ui
-pnpm install
-pnpm dev
+corepack enable
+corepack prepare pnpm@10.25.0 --activate
+corepack pnpm install
+corepack pnpm dev
 ```
 
 前端构建变量在 `ui/Dockerfile` 中：
@@ -789,7 +801,7 @@ password: admin123
 最小生产部署：
 
 1. 服务器安装 Docker 和 Docker Compose。
-2. 拉代码，复制 `.env.example` 为 `.env`。
+2. 拉代码；如果要接真实模型，复制 `.env.example` 为 `.env`。
 3. 改 `REACTOR_FAKE_LLM=false`。
 4. 填真实模型 Key。
 5. 改 MySQL root/user 密码。

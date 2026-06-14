@@ -17,7 +17,8 @@
 - TypeScript
 - Vite
 - Ant Design
-- pnpm
+- Node.js 20+
+- Corepack（用于启用 pnpm）
 
 前端依赖锁以 `pnpm-lock.yaml` 为准，不维护 `package-lock.json`。
 
@@ -25,8 +26,10 @@
 
 ```bash
 cd ui
-pnpm install
-pnpm dev
+corepack enable
+corepack prepare pnpm@10.25.0 --activate
+corepack pnpm install
+corepack pnpm dev
 ```
 
 默认开发地址：
@@ -39,7 +42,7 @@ http://localhost:3000
 
 ```bash
 cd ui
-pnpm run build
+corepack pnpm run build
 ```
 
 Docker 构建时会通过 `ui/Dockerfile` 设置：
@@ -55,12 +58,12 @@ REACTOR_TOOL_BASE_URL="/tool"
 
 | 命令 | 作用 |
 | --- | --- |
-| `pnpm dev` | 启动开发服务器 |
-| `pnpm build` | 构建生产静态资源 |
-| `pnpm lint` | 运行 ESLint |
-| `pnpm fix` | 自动修复 ESLint 问题 |
-| `pnpm preview` | 预览生产构建 |
-| `pnpm test` | 运行前端测试 |
+| `corepack pnpm dev` | 启动开发服务器 |
+| `corepack pnpm build` | 构建生产静态资源 |
+| `corepack pnpm lint` | 运行 ESLint |
+| `corepack pnpm fix` | 自动修复 ESLint 问题 |
+| `corepack pnpm preview` | 预览生产构建 |
+| `corepack pnpm test` | 运行前端测试 |
 
 ## 相关文档
 

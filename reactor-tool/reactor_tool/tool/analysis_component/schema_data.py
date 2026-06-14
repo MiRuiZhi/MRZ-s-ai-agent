@@ -10,11 +10,10 @@ import os
 import requests
 from typing import Any, Dict, List
 
-from dotenv import load_dotenv
-
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.util.log_util import timer
 
-load_dotenv()
+load_reactor_tool_dotenv()
 
 
 @timer()
@@ -46,4 +45,3 @@ def get_data(query: str, modelCodeList: List[str], timeout: float = 90, request_
     if response.status_code != 200:
         response.raise_for_status()
     return json.loads(response.text)
-

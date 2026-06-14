@@ -4,16 +4,14 @@ import os
 import time
 from typing import Optional
 
-from dotenv import load_dotenv
-
 import requests
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.util.log_util import logger
 from reactor_tool.tool.table_rag.es_client import ElasticsearchClient
 from reactor_tool.tool.table_rag.qdrant_recall import get_qd_recall, get_qd_server_recall
 from reactor_tool.util.qdrant_utils import has_direct_qdrant_config, resolve_table_rag_qdrant_config
 
-# 加载 .env 文件
-load_dotenv()
+load_reactor_tool_dotenv()
 
 
 def _first_non_blank_env(*names, default=None):

@@ -6,12 +6,12 @@
 
 | 服务 | 端口 | 作用 |
 | --- | --- | --- |
-| `nginx` | `8080 -> 80` | 浏览器统一入口，同源代理 UI、agent-api、tool-runtime |
+| `nginx` | `8080 -> 80` | 浏览器统一入口，同源代理 UI、agent-api、tool-runtime；宿主端口可用 `NGINX_HOST_PORT` 覆盖 |
 | `ui` | 容器内部 | React 静态资源构建产物 |
-| `agent-api` | `8000 -> 8000` | Agent API、SSE、ReAct、PlanSolve、账本 |
-| `tool-runtime` | `1601 -> 1601` | 工具 HTTP 服务、文件服务、MRAG/RAG |
-| `mysql` | `3306 -> 3306` | 关系型账本和配置数据 |
-| `qdrant` | `6333 -> 6333` | 向量检索 |
+| `agent-api` | `8000 -> 8000` | Agent API、SSE、ReAct、PlanSolve、账本；宿主端口可用 `AGENT_API_HOST_PORT` 覆盖 |
+| `tool-runtime` | `1601 -> 1601` | 工具 HTTP 服务、文件服务、MRAG/RAG；宿主端口可用 `TOOL_RUNTIME_HOST_PORT` 覆盖 |
+| `mysql` | `3307 -> 3306` | 关系型账本和配置数据；宿主端口可用 `MYSQL_HOST_PORT` 覆盖 |
+| `qdrant` | `6333 -> 6333` | 向量检索；宿主端口可用 `QDRANT_HOST_PORT` 覆盖 |
 
 ## 本地启动
 
@@ -28,19 +28,21 @@
 docker info
 ```
 
-### 2. 复制配置
+### 2. 配置
 
-```bash
-cp .env.example .env
-```
-
-默认 `.env.example` 使用 fake LLM：
+默认不需要创建 `.env`。`docker-compose.yml` 已经内置 fake LLM、MySQL、Qdrant、tool-runtime、agent-api、ui 和 nginx 的本地服务默认值：
 
 ```bash
 REACTOR_FAKE_LLM=true
 ```
 
-这个模式不需要模型 Key，适合先验证服务、SSE、数据库、前端和工具链路。
+这个模式不需要模型 Key，适合先验证服务、SSE、数据库、前端和三种主流程。deep search、图片生成、MRAG/RAG 的真实效果仍需要对应外部配置。
+
+只有需要覆盖模型、并发、迁移、宿主端口或搜索配置时，才复制模板；它不是启动前置步骤：
+
+```bash
+cp .env.example .env
+```
 
 ### 3. 启动
 
@@ -60,7 +62,19 @@ docker compose up -d --build
 - agent-api 健康检查：http://localhost:8000/web/health
 - tool-runtime：http://localhost:1601
 - Qdrant：http://localhost:6333
-- MySQL：localhost:3306
+- MySQL：localhost:3307（容器内仍为 3306，可用 `MYSQL_HOST_PORT` 覆盖宿主端口）
+
+端口冲突时，在 `.env` 中覆盖：
+
+```bash
+NGINX_HOST_PORT=18080
+AGENT_API_HOST_PORT=18000
+TOOL_RUNTIME_HOST_PORT=11601
+QDRANT_HOST_PORT=16333
+MYSQL_HOST_PORT=13307
+```
+
+完整保留范围、三种模式验证和 runtime skills 路径见 [完整主链路运行说明](../development/main-chain-runbook.md)。
 
 ## 初始化
 
@@ -203,7 +217,7 @@ docker run --rm \
 ## 上线建议
 
 1. 在服务器安装 Docker 和 Docker Compose。
-2. 拉取代码，复制 `.env.example` 为 `.env`。
+2. 拉取代码；如果要接真实模型，复制 `.env.example` 为 `.env`。
 3. 改 `REACTOR_FAKE_LLM=false`，填入模型 Key。
 4. 修改 MySQL root/user 密码。
 5. 使用 `docker compose up -d --build` 启动。
@@ -214,7 +228,7 @@ docker run --rm \
 ## 常见问题
 
 - `agent-api` 无模型 Key 仍能回复：这是 fake LLM 模式，用来验证链路。
-- 文件预览打不开：确认 `FILE_SERVER_URL=http://localhost/tool/v1/file_tool`。
+- 文件预览打不开：Docker Compose 默认在容器内使用 `FILE_SAVE_PATH=/app/skilloutput`，浏览器侧通过 nginx 访问 `/tool/v1/file_tool`；先看 `docker compose logs tool-runtime nginx`。
 - DeepSearch 不工作：先看 `docker compose logs tool-runtime`，再检查 `OPENAI_*`、`DEEPSEARCH_*` 和搜索引擎配置。
 - 数据库版本更新失败：确认 MySQL healthcheck 已通过，再查看 `docker compose logs agent-api`。
 - 浏览器访问 UI 正常但接口失败：优先看 `deploy/nginx.conf` 和 nginx 日志，确认 `/web/`、`/api/`、`/data/`、`/tool/` 代理是否正常。

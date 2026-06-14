@@ -1,27 +1,29 @@
 
 #!/bin/bash
+set -euo pipefail
 
-# Check if Node.js version is 18
-if [ $(node -v | cut -d. -f1,2) -lt 18 ]; then
-  echo "Node.js version 18 is required. Current version: $(node -v)"
+PNPM_VERSION="10.25.0"
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js is required. Install Node.js 20+ first."
   exit 1
 fi
 
-# Check if pnpm is installed
-if ! command -v pnpm &> /dev/null; then
-  echo "pnpm is not installed. installing pnpm@7.33.1 now"
-  echo "RUN 'npm install -g pnpm@7.33.1' Installing pnpm..."
-  npm install pnpm@7.33.1 -g
-fi
-
-# Check if pnpm version is 7
-if [ $(pnpm -v | cut -d. -f1,2) -lt 7 ]; then
-  echo "pnpm version 7 is required. Current version: $(pnpm -v)"
+NODE_MAJOR="$(node -p "Number(process.versions.node.split('.')[0])")"
+if [ "$NODE_MAJOR" -lt 20 ]; then
+  echo "Node.js 20+ is required. Current version: $(node -v)"
   exit 1
 fi
 
-pnpm i --registry=https://registry.npmmirror.com
+if ! command -v corepack >/dev/null 2>&1; then
+  echo "Corepack is required. Use the official Node.js 20+ installer or enable your Node package manager tooling."
+  exit 1
+fi
 
+corepack enable
+corepack prepare "pnpm@${PNPM_VERSION}" --activate
+
+pnpm install --frozen-lockfile
 pnpm run dev
 
-echo "✅front end code start success!"
+echo "front end code start success"

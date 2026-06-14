@@ -9,17 +9,17 @@ import os
 from datetime import datetime
 from typing import Optional, List, Literal, AsyncGenerator
 
-from dotenv import load_dotenv
 from jinja2 import Template
 from loguru import logger
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.util.file_util import download_all_files, truncate_files, flatten_search_file
 from reactor_tool.util.prompt_util import get_prompt
 from reactor_tool.util.llm_util import ask_llm
 from reactor_tool.util.log_util import timer
 from reactor_tool.model.context import LLMModelInfoFactory
 
-load_dotenv()
+load_reactor_tool_dotenv()
 
 
 @timer(key="enter")

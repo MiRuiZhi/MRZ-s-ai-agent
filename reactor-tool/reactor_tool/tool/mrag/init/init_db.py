@@ -1,12 +1,12 @@
 import os
 
-import dotenv
 import requests
 
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from reactor_tool.tool.mrag.storage import VectorStore
 from reactor_tool.tool.mrag.utils.oss_utils import upload_local_storage
 
-dotenv.load_dotenv()
+load_reactor_tool_dotenv()
 
 base_url = "http://127.0.0.1:1601"
 

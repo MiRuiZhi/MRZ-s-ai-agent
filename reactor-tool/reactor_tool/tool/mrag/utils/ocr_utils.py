@@ -4,12 +4,11 @@
 import os
 from abc import abstractmethod, ABC
 
-import dotenv
-
+from reactor_tool.config.env import load_reactor_tool_dotenv
 from .logger_utils import logger
 from ..generation.vlm import VLLMClient
 
-dotenv.load_dotenv()
+load_reactor_tool_dotenv()
 
 
 class OCRBase(ABC):
