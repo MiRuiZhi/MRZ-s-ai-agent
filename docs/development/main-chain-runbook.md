@@ -2,6 +2,77 @@
 
 这份文档只回答一个问题：这个项目保留哪些主设计，默认怎么跑，三种模式如何验证，哪些能力需要真实外部配置才能看到完整效果。
 
+## 0. 最短操作卡片
+
+后台启动完整链路：
+
+```bash
+make up
+```
+
+如果已经构建过镜像：
+
+```bash
+make start
+```
+
+浏览器入口：
+
+```text
+http://localhost:18080
+```
+
+一键停止，保留 MySQL、Qdrant 和工具产物 volume：
+
+```bash
+make stop
+```
+
+没有 `make` 时使用等价 Docker 命令：
+
+```bash
+docker compose up -d --build
+docker compose up -d --no-build
+docker compose down
+```
+
+如果你的 `docker ps` 是这样：
+
+```text
+ai-agent-ui             80/tcp
+ai-agent-agent-api      0.0.0.0:8000->8000/tcp
+ai-agent-tool-runtime   0.0.0.0:1601->1601/tcp
+ai-agent-nginx          0.0.0.0:18080->80/tcp
+```
+
+应该这么理解：
+
+| `docker ps` 端口 | 该怎么用 |
+| --- | --- |
+| `ai-agent-nginx` 的 `0.0.0.0:18080->80/tcp` | 浏览器打开 `http://localhost:18080` |
+| `ai-agent-agent-api` 的 `0.0.0.0:8000->8000/tcp` | API 和健康检查用 `http://localhost:8000` |
+| `ai-agent-tool-runtime` 的 `0.0.0.0:1601->1601/tcp` | 工具运行时调试用 `http://localhost:1601` |
+| `ai-agent-ui` 的 `80/tcp` | 只是容器内部端口，宿主浏览器不要直接访问 |
+
+`0.0.0.0` 是监听地址，不是浏览器地址。浏览器用 `localhost` 或 `127.0.0.1`。
+
+前端模式对应关系：
+
+| 前端按钮 | 后端链路 | API 参数 |
+| --- | --- | --- |
+| `深度思考` | ReAct | `deepThink=0` |
+| `深度研究` | PlanSolve | `deepThink=1` |
+| `数据分析` | dataAgent 兼容流 | `/data/chatQuery` |
+
+命令行验证：
+
+```bash
+make health
+make react
+make plan
+make data
+```
+
 ## 1. 保留范围
 
 当前仓库的主链路不是“只留一个聊天壳子”。默认设计保留以下部分：
@@ -87,7 +158,7 @@ NGINX_HOST_PORT=18080
 所以本地第一次验证应该直接运行：
 
 ```bash
-docker compose up -d --build
+make up
 ```
 
 这条命令会在后台启动容器，终端回到提示符后服务仍会继续运行。前台 `docker compose up --build` 只适合看实时日志；一旦按 `Ctrl+C` 或关闭终端，容器会停止，浏览器会访问不到。
@@ -95,16 +166,16 @@ docker compose up -d --build
 如果镜像已经构建过，但 Docker Hub metadata 或 oauth token 请求临时超时，可以跳过构建直接启动已有镜像：
 
 ```bash
-docker compose up -d --no-build
+make start
 ```
 
 访问前先确认容器仍在运行：
 
 ```bash
-docker compose ps
+make ps
 ```
 
-浏览器访问时使用 `localhost` 或 `127.0.0.1`。日志中的 `0.0.0.0:8000`、`0.0.0.0:1601` 是服务监听地址，不是浏览器地址；打开 `0.0.0.0` 可能会卡住。
+浏览器访问时使用 `localhost` 或 `127.0.0.1`。日志或 `docker ps` 中的 `0.0.0.0:18080->80`、`0.0.0.0:8000->8000`、`0.0.0.0:1601->1601` 是服务监听地址，不是浏览器地址；打开 `0.0.0.0` 可能会卡住。
 
 只有需要覆盖默认值时，才复制模板：
 

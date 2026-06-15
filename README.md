@@ -98,6 +98,42 @@ flowchart TD
 
 ## 快速开始
 
+### 先看这里
+
+如果 `docker ps` 里看到下面这种端口：
+
+```text
+ai-agent-ui        80/tcp
+ai-agent-nginx     0.0.0.0:18080->80/tcp
+ai-agent-agent-api 0.0.0.0:8000->8000/tcp
+```
+
+浏览器应该打开：
+
+```text
+http://localhost:18080
+```
+
+原因很简单：`ai-agent-ui` 的 `80/tcp` 是容器内部端口，没有映射到宿主机；真正给浏览器访问的是 `nginx` 的 `18080->80`。不要打开 `0.0.0.0:18080`，那是监听地址，不是浏览器入口。
+
+最常用命令：
+
+```bash
+make up      # 后台构建并启动
+make start   # 使用已有镜像后台启动
+make ps      # 查看服务状态
+make health  # 检查 agent-api 和 UI 入口
+make stop    # 一键停止，保留 MySQL/Qdrant/tool-output 数据
+```
+
+没有 `make` 也可以直接用等价 Docker 命令：
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose down
+```
+
 ### 1. 准备环境
 
 需要 Docker Desktop 或 Docker Engine，并启用 Docker Compose v2。
@@ -117,12 +153,24 @@ REACTOR_FAKE_LLM=true
 这个模式不需要模型 Key，可以先验证 API、SSE、数据库、前端和三种主流程。deep search、图片生成、MRAG/RAG 等真实效果仍取决于对应外部模型、搜索、知识库和向量配置。
 
 ```bash
+make up
+```
+
+等价于：
+
+```bash
 docker compose up -d --build
 ```
 
 这条命令会在后台启动容器，终端回到提示符后服务仍会继续运行。不要把前台 `docker compose up --build` 当成默认启动方式；前台模式一旦按 `Ctrl+C` 或关闭终端，容器会停止，浏览器就会访问不到。
 
 如果镜像已经构建过，但 Docker Hub 临时超时，可以直接用已有镜像启动：
+
+```bash
+make start
+```
+
+等价于：
 
 ```bash
 docker compose up -d --no-build
@@ -136,14 +184,23 @@ docker compose up -d --no-build
 - Qdrant：http://localhost:6333
 - MySQL：localhost:3307（容器内仍为 3306）
 
-日志里的 `0.0.0.0:8000`、`0.0.0.0:1601` 只是容器监听地址，不是浏览器访问地址。浏览器请使用 `localhost` 或 `127.0.0.1`，不要打开 `0.0.0.0`。
+日志或 `docker ps` 里的 `0.0.0.0:18080->80`、`0.0.0.0:8000->8000`、`0.0.0.0:1601->1601` 只是说明服务监听所有网卡。浏览器请使用 `localhost` 或 `127.0.0.1`，不要打开 `0.0.0.0`。
+
+`docker ps` 端口判断规则：
+
+| 看到的端口 | 应该怎么用 |
+| --- | --- |
+| `ai-agent-nginx` 的 `0.0.0.0:18080->80/tcp` | 浏览器打开 `http://localhost:18080` |
+| `ai-agent-agent-api` 的 `0.0.0.0:8000->8000/tcp` | 健康检查和 API 用 `http://localhost:8000` |
+| `ai-agent-tool-runtime` 的 `0.0.0.0:1601->1601/tcp` | 工具运行时调试用 `http://localhost:1601` |
+| `ai-agent-ui` 的 `80/tcp` | 容器内部端口，不要直接访问 |
 
 如果宿主端口被占用，可以用 `.env` 覆盖 `NGINX_HOST_PORT`、`AGENT_API_HOST_PORT`、`TOOL_RUNTIME_HOST_PORT`、`QDRANT_HOST_PORT` 和 `MYSQL_HOST_PORT`。
 
 确认服务是否仍在运行：
 
 ```bash
-docker compose ps
+make ps
 ```
 
 `agent-api` 容器启动时默认执行：
@@ -174,12 +231,35 @@ REACTOR_EXECUTOR_MODEL=qwen-plus
 
 OpenAI、DashScope、Ollama 等 OpenAI-compatible 网关都可以接入。
 
+## 前端模式怎么用
+
+打开 `http://localhost:18080` 后，在输入框左下角选择模式：
+
+| 前端按钮 | 后端链路 | 参数含义 | 适合场景 |
+| --- | --- | --- | --- |
+| `深度思考` | ReAct | `deepThink=false` / API 里 `deepThink=0` | 普通多步问答、工具调用、短链路任务 |
+| `深度研究` | PlanSolve | `deepThink=true` / API 里 `deepThink=1` | 需要先规划、拆任务、再汇总的复杂任务 |
+| `数据分析` | dataAgent 兼容流 | `/data/chatQuery` | 先跑通前端问数流程；完整 NL2SQL 仍是后续增强 |
+
+所以你说的 ReAct/Plan 两种模式，在当前 UI 里的名字分别是：
+
+- ReAct：点 `深度思考`。
+- PlanSolve：点 `深度研究`。
+
+也可以直接用命令验证：
+
+```bash
+make react
+make plan
+make data
+```
+
 ## API 示例
 
 ### 健康检查
 
 ```bash
-curl http://localhost:8000/web/health
+make health
 ```
 
 ### ReAct

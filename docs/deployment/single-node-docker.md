@@ -2,6 +2,32 @@
 
 这份文档说明如何用 Docker Compose 启动完整主链路：`mysql/qdrant/tool-runtime/agent-api/ui/nginx`。
 
+## 直接答案
+
+默认浏览器访问：
+
+```text
+http://localhost:18080
+```
+
+一键启动、查看、停止：
+
+```bash
+make up
+make ps
+make stop
+```
+
+`make stop` 等价于 `docker compose down`，会停止容器但保留 MySQL、Qdrant 和工具产物 volume。没有 `make` 时直接运行：
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose down
+```
+
+如果 `docker ps` 里 `ai-agent-ui` 只显示 `80/tcp`，它不是宿主机入口；真正入口是 `ai-agent-nginx` 的 `0.0.0.0:18080->80/tcp`。浏览器打开 `localhost:18080`，不要打开 `0.0.0.0:18080`。
+
 ## 服务拓扑
 
 | 服务 | 端口 | 作用 |
@@ -47,7 +73,7 @@ cp .env.example .env
 ### 3. 启动
 
 ```bash
-docker compose up -d --build
+make up
 ```
 
 这条命令会在后台启动容器，终端回到提示符后服务仍会继续运行。前台模式只适合看实时日志：
@@ -59,7 +85,7 @@ docker compose up --build
 前台模式下按 `Ctrl+C` 或关闭终端会停止容器。若镜像已经构建过，但 Docker Hub metadata 或 oauth token 请求临时超时，可以跳过构建直接启动已有镜像：
 
 ```bash
-docker compose up -d --no-build
+make start
 ```
 
 ### 4. 访问
@@ -70,7 +96,16 @@ docker compose up -d --no-build
 - Qdrant：http://localhost:6333
 - MySQL：localhost:3307（容器内仍为 3306，可用 `MYSQL_HOST_PORT` 覆盖宿主端口）
 
-日志里的 `0.0.0.0:8000`、`0.0.0.0:1601` 只表示服务监听所有网卡，不是浏览器访问地址。浏览器请访问 `localhost` 或 `127.0.0.1`。如果打开 `0.0.0.0`，部分浏览器会直接卡住或拒绝连接。
+日志或 `docker ps` 里的 `0.0.0.0:18080->80`、`0.0.0.0:8000->8000`、`0.0.0.0:1601->1601` 只表示服务监听所有网卡，不是浏览器访问地址。浏览器请访问 `localhost` 或 `127.0.0.1`。如果打开 `0.0.0.0`，部分浏览器会直接卡住或拒绝连接。
+
+端口判断表：
+
+| 服务 | `docker ps` 常见显示 | 使用方式 |
+| --- | --- | --- |
+| `nginx` | `0.0.0.0:18080->80/tcp` | 浏览器打开 `http://localhost:18080` |
+| `ui` | `80/tcp` | 容器内部端口，不直接访问 |
+| `agent-api` | `0.0.0.0:8000->8000/tcp` | `curl http://localhost:8000/web/health` |
+| `tool-runtime` | `0.0.0.0:1601->1601/tcp` | 工具调试用 `http://localhost:1601` |
 
 端口冲突时，在 `.env` 中覆盖：
 
@@ -87,7 +122,7 @@ MYSQL_HOST_PORT=13307
 如果浏览器访问不到，先看容器是否仍在运行：
 
 ```bash
-docker compose ps
+make ps
 ```
 
 `Exited` 表示容器已经停了，需要重新执行 `docker compose up -d --no-build` 或 `docker compose up -d --build`。
@@ -187,6 +222,12 @@ docker compose restart tool-runtime
 ```
 
 停止但保留数据：
+
+```bash
+make stop
+```
+
+等价于：
 
 ```bash
 docker compose down
