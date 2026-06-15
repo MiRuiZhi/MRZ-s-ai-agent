@@ -138,6 +138,8 @@ docker compose up -d --no-build
 - Qdrant：http://localhost:6333
 - MySQL：localhost:3307（容器内仍为 3306，可用 `MYSQL_HOST_PORT` 覆盖宿主端口）
 
+日志里的 `0.0.0.0:8000`、`0.0.0.0:1601` 只表示服务监听所有网卡，不是浏览器访问地址。浏览器请访问 `localhost` 或 `127.0.0.1`。如果打开 `0.0.0.0`，部分浏览器会直接卡住或拒绝连接。
+
 端口冲突时，在 `.env` 里覆盖 `NGINX_HOST_PORT`、`AGENT_API_HOST_PORT`、`TOOL_RUNTIME_HOST_PORT`、`QDRANT_HOST_PORT` 或 `MYSQL_HOST_PORT`。
 
 如果浏览器访问不到，先检查容器状态：

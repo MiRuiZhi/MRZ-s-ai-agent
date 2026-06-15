@@ -136,6 +136,8 @@ docker compose up -d --no-build
 - Qdrant：http://localhost:6333
 - MySQL：localhost:3307（容器内仍为 3306）
 
+日志里的 `0.0.0.0:8000`、`0.0.0.0:1601` 只是容器监听地址，不是浏览器访问地址。浏览器请使用 `localhost` 或 `127.0.0.1`，不要打开 `0.0.0.0`。
+
 如果宿主端口被占用，可以用 `.env` 覆盖 `NGINX_HOST_PORT`、`AGENT_API_HOST_PORT`、`TOOL_RUNTIME_HOST_PORT`、`QDRANT_HOST_PORT` 和 `MYSQL_HOST_PORT`。
 
 确认服务是否仍在运行：
