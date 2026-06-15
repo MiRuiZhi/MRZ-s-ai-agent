@@ -90,6 +90,20 @@ NGINX_HOST_PORT=18080
 docker compose up -d --build
 ```
 
+这条命令会在后台启动容器，终端回到提示符后服务仍会继续运行。前台 `docker compose up --build` 只适合看实时日志；一旦按 `Ctrl+C` 或关闭终端，容器会停止，浏览器会访问不到。
+
+如果镜像已经构建过，但 Docker Hub metadata 或 oauth token 请求临时超时，可以跳过构建直接启动已有镜像：
+
+```bash
+docker compose up -d --no-build
+```
+
+访问前先确认容器仍在运行：
+
+```bash
+docker compose ps
+```
+
 只有需要覆盖默认值时，才复制模板：
 
 ```bash

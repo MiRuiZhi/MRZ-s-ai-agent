@@ -117,7 +117,15 @@ REACTOR_FAKE_LLM=true
 这个模式不需要模型 Key，可以先验证 API、SSE、数据库、前端和三种主流程。deep search、图片生成、MRAG/RAG 等真实效果仍取决于对应外部模型、搜索、知识库和向量配置。
 
 ```bash
-docker compose up --build
+docker compose up -d --build
+```
+
+这条命令会在后台启动容器，终端回到提示符后服务仍会继续运行。不要把前台 `docker compose up --build` 当成默认启动方式；前台模式一旦按 `Ctrl+C` 或关闭终端，容器会停止，浏览器就会访问不到。
+
+如果镜像已经构建过，但 Docker Hub 临时超时，可以直接用已有镜像启动：
+
+```bash
+docker compose up -d --no-build
 ```
 
 访问地址：
@@ -129,6 +137,12 @@ docker compose up --build
 - MySQL：localhost:3307（容器内仍为 3306）
 
 如果宿主端口被占用，可以用 `.env` 覆盖 `NGINX_HOST_PORT`、`AGENT_API_HOST_PORT`、`TOOL_RUNTIME_HOST_PORT`、`QDRANT_HOST_PORT` 和 `MYSQL_HOST_PORT`。
+
+确认服务是否仍在运行：
+
+```bash
+docker compose ps
+```
 
 `agent-api` 容器启动时默认执行：
 

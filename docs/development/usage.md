@@ -19,7 +19,7 @@
 - 这不是把所有业务接口逐字段完全强类型化的最终版，而是一个可继续迭代的 Python+C++ 生产替代基础。
 - `/data/chatQuery` 目前是前端兼容 SSE，占位输出 `THINK`、空 `CHART_DATA` 和 `READY`，还没有完整强化 NL2SQL 能力。
 - Admin 路由是通用配置实现，落在 `config_record` 表；后续可按高频资源拆强类型 DTO。
-- 本机 Docker daemon 未启动时，不能执行 `docker compose up --build` 或 `docker compose build`。代码层面已经通过 `docker compose config` 校验。
+- 本机 Docker daemon 未启动时，不能执行 `docker compose up -d --build` 或 `docker compose build`。代码层面已经通过 `docker compose config` 校验。
 
 ## 主链路保留和瘦身说明
 
@@ -113,13 +113,19 @@ cp .env.example .env
 ### 3. 启动服务
 
 ```bash
+docker compose up -d --build
+```
+
+这条命令会在后台启动容器，终端回到提示符后服务仍会继续运行。前台模式只适合看实时日志：
+
+```bash
 docker compose up --build
 ```
 
-后台启动：
+前台模式下按 `Ctrl+C` 或关闭终端会停止容器。若镜像已经构建过，但 Docker Hub metadata 或 oauth token 请求临时超时，可以跳过构建直接启动已有镜像：
 
 ```bash
-docker compose up -d --build
+docker compose up -d --no-build
 ```
 
 ### 4. 访问地址
@@ -133,6 +139,14 @@ docker compose up -d --build
 - MySQL：localhost:3307（容器内仍为 3306，可用 `MYSQL_HOST_PORT` 覆盖宿主端口）
 
 端口冲突时，在 `.env` 里覆盖 `NGINX_HOST_PORT`、`AGENT_API_HOST_PORT`、`TOOL_RUNTIME_HOST_PORT`、`QDRANT_HOST_PORT` 或 `MYSQL_HOST_PORT`。
+
+如果浏览器访问不到，先检查容器状态：
+
+```bash
+docker compose ps
+```
+
+如果看到 `Exited`，说明服务已经停止，重新执行 `docker compose up -d --no-build` 或 `docker compose up -d --build`。
 
 ### 5. 数据库初始化
 

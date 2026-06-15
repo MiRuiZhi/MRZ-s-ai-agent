@@ -47,13 +47,19 @@ cp .env.example .env
 ### 3. 启动
 
 ```bash
+docker compose up -d --build
+```
+
+这条命令会在后台启动容器，终端回到提示符后服务仍会继续运行。前台模式只适合看实时日志：
+
+```bash
 docker compose up --build
 ```
 
-后台启动：
+前台模式下按 `Ctrl+C` 或关闭终端会停止容器。若镜像已经构建过，但 Docker Hub metadata 或 oauth token 请求临时超时，可以跳过构建直接启动已有镜像：
 
 ```bash
-docker compose up -d --build
+docker compose up -d --no-build
 ```
 
 ### 4. 访问
@@ -75,6 +81,14 @@ MYSQL_HOST_PORT=13307
 ```
 
 完整保留范围、三种模式验证和 runtime skills 路径见 [完整主链路运行说明](../development/main-chain-runbook.md)。
+
+如果浏览器访问不到，先看容器是否仍在运行：
+
+```bash
+docker compose ps
+```
+
+`Exited` 表示容器已经停了，需要重新执行 `docker compose up -d --no-build` 或 `docker compose up -d --build`。
 
 ## 初始化
 
