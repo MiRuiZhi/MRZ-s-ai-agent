@@ -107,6 +107,27 @@ class AgentCoreTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(1, len(failed_events))
         self.assertIn("tool exploded", context.memory.messages[-2].content)
 
+    async def test_react_agent_direct_answer_is_not_emitted_as_tool_thought(self):
+        events = EventCollector()
+        ledger = InMemoryLedger()
+        context = AgentContext(
+            request_id="req-react-direct",
+            session_id="session-1",
+            query="say hello",
+            events=events,
+            ledger=ledger,
+            tools=ToolCollection(),
+        )
+        llm = ScriptedLLM([ToolCallResponse(content="Direct final answer.", tool_calls=[])])
+
+        result = await ReactAgent(context=context, llm=llm, max_steps=4).run()
+
+        self.assertEqual(result, "Direct final answer.")
+        self.assertEqual(
+            [event.type for event in events.items],
+            ["result"],
+        )
+
     async def test_plan_solve_runs_parallel_subtasks_and_summarizes(self):
         events = EventCollector()
         ledger = InMemoryLedger()

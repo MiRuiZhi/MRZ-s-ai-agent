@@ -102,7 +102,7 @@ class ReactAgent(BaseAgent):
         try:
             for step_no in range(1, self.max_steps + 1):
                 response = await self._ask_tool(step_no)
-                if response.content:
+                if response.tool_calls and response.content:
                     await self.context.events.emit("tool_thought", response.content)
 
                 self.context.memory.add(Message.assistant(response.content, response.tool_calls))
@@ -141,7 +141,7 @@ class _ExecutorAgent(BaseAgent):
     async def run(self) -> str:
         for step_no in range(1, self.max_steps + 1):
             response = await self._ask_tool(step_no)
-            if response.content:
+            if response.tool_calls and response.content:
                 await self.context.events.emit("tool_thought", response.content)
             self.context.memory.add(Message.assistant(response.content, response.tool_calls))
             if not response.tool_calls:

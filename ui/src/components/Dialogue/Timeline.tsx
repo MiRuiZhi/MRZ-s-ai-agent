@@ -73,7 +73,8 @@ const ToolItem: FC<ToolItemProps> = memo(({
       );
     }
     case "tool_thought": {
-      const streamingThought = !tool.resultMap?.isFinal;
+      const streamingThought =
+        chat.loading && !(tool.resultMap?.isFinal || tool.isFinal || tool.finish);
       return (
         <div className="mt-[8px] rounded-2xl border border-[var(--chat-border)]/18 bg-[var(--chat-surface-soft)]/38 px-3 py-2.5">
           <Reasoning isStreaming={streamingThought} defaultOpen>

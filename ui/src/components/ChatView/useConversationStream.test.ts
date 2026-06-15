@@ -102,15 +102,16 @@ describe("useConversationStream helpers", () => {
     const result = parseAgentAnswer({
       messageType: "tool_thought",
       data: "我需要先理解问题",
-      isFinal: false,
+      isFinal: true,
       messageId: "msg-tool-thought",
     });
 
     const eventData = result.resultMap.eventData!;
-    expect(result.finished).toBe(false);
+    expect(result.finished).toBe(true);
     expect(eventData.messageType).toBe("task");
     expect(eventData.messageId).toBe("msg-tool-thought");
     expect(eventData.resultMap.messageType).toBe("tool_thought");
+    expect(eventData.resultMap.isFinal).toBe(true);
     expect(eventData.resultMap.toolThought).toBe("我需要先理解问题");
   });
 

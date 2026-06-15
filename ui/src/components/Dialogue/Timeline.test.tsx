@@ -90,4 +90,30 @@ describe("Timeline component", () => {
     expect(html).toContain("子问题一");
     expect(html).toContain("搜索完成");
   });
+
+  it("会话结束后未补终态的 tool_thought 不应继续显示思考中", () => {
+    const html = renderToStaticMarkup(
+      <Timeline
+        chat={createChat({
+          loading: false,
+          tasks: [[{
+            task: "收集资料",
+            children: [{
+              messageType: "tool_thought",
+              toolThought: "已完成资料收集",
+              isFinal: false,
+              resultMap: {
+                isFinal: false,
+              },
+            } as unknown as CHAT.Task],
+          } as unknown as CHAT.Task]],
+        })}
+        isPlanSolveMessage={true}
+        changeActiveChat={vi.fn()}
+      />
+    );
+
+    expect(html).not.toContain("思考中");
+    expect(html).toContain("思考完成");
+  });
 });

@@ -438,7 +438,9 @@ const GeneralInput: ReactorType.FC<Props> = (props) => {
             >
               <PromptInputActionMenu>
                 <PromptInputActionMenuTrigger
+                  aria-label="添加附件"
                   size="icon-sm"
+                  title="添加附件"
                   variant="ghost"
                   disabled={disabled}
                   className="rounded-full border-0 bg-white text-[#111827] shadow-none ring-0 transition-all duration-200 hover:bg-[#f9fafb] focus-visible:ring-0"

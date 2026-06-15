@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ActionViewItemEnum } from "@/utils";
+import { ActionViewItemEnum, getUniqId } from "@/utils";
 import querySSE from "@/utils/querySSE";
 import { getStableTaskIdentity } from "@/utils/chat";
 import Dialogue from "@/components/Dialogue";
@@ -220,7 +220,13 @@ const ChatView: ReactorType.FC<Props> = (props) => {
   const sendDataMessage = useMemoizedFn((inputInfo: CHAT.TInputInfo) => {
     const baseConversation = conversationRef.current;
     const conversationId = baseConversation.id;
-    const params = {content: inputInfo.message,};
+    const requestId = getUniqId();
+    const params = {
+      content: inputInfo.message,
+      query: inputInfo.message,
+      sessionId: baseConversation.sessionId,
+      requestId,
+    };
     const currentChat: CHAT.DataChatItem = {
       query: inputInfo.message,
       loading: true,

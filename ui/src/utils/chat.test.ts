@@ -260,6 +260,34 @@ function createToolResultEvent(options?: {
   } as unknown as MESSAGE.EventData;
 }
 
+function createToolThoughtEvent(options?: {
+  messageId?: string;
+  taskId?: string;
+  toolThought?: string;
+  isFinal?: boolean;
+}): MESSAGE.EventData {
+  const messageId = options?.messageId || "tool-thought-msg-1";
+  const taskId = options?.taskId || "task-tool-thought-1";
+  const isFinal = options?.isFinal ?? true;
+
+  return {
+    messageType: "task",
+    messageId,
+    taskId,
+    taskOrder: 1,
+    messageOrder: 1,
+    resultMap: {
+      requestId: "req-tool-thought-1",
+      messageId,
+      messageType: "tool_thought",
+      messageTime: "1714041600888",
+      finish: isFinal,
+      isFinal,
+      toolThought: options?.toolThought || "已经完成工具思考",
+    } as unknown as MESSAGE.Task,
+  } as unknown as MESSAGE.EventData;
+}
+
 function createPlannerThoughtEvent(options: {
   plannerRoundId: string;
   planThought: string;
@@ -967,6 +995,29 @@ describe("chat file task title", () => {
       action: "读取文件",
       name: "风险日报.md",
     });
+  });
+
+  it("tool_thought 终态进入时间线后应保留 resultMap.isFinal，避免思考块持续显示流式状态", () => {
+    const currentChat = {
+      sessionId: "session-tool-thought-1",
+      requestId: "req-tool-thought-1",
+      query: "执行一次计划",
+      files: [],
+      forceStop: false,
+      loading: false,
+      tasks: [],
+      timeline: [],
+      multiAgent: { tasks: [] },
+    } as CHAT.ChatItem;
+
+    combineData(createToolThoughtEvent({ isFinal: true }), currentChat);
+
+    const { chatList } = handleTaskData(currentChat, true, currentChat.multiAgent);
+    const renderedTool = chatList[0]?.[0]?.children?.[0];
+
+    expect(renderedTool?.messageType).toBe("tool_thought");
+    expect(renderedTool?.isFinal).toBe(true);
+    expect(renderedTool?.resultMap?.isFinal).toBe(true);
   });
 
   it("已有工具结果卡片后，tool_call 终态回包不应再次追加新卡片", () => {

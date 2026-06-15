@@ -295,10 +295,18 @@ function handleToolThoughtMessage(
  * @returns 新任务对象
  */
 function createNewTask(taskId: string, resultMap: MESSAGE.Task): MESSAGE.Task {
-  return {
+  const task = {
     taskId,
     ...resultMap,
   };
+
+  task.resultMap = {
+    ...(task.resultMap || {}),
+    isFinal: resultMap.isFinal ?? resultMap.finish ?? task.resultMap?.isFinal,
+    messageType: task.resultMap?.messageType || resultMap.messageType,
+  };
+
+  return task;
 }
 
 /**
@@ -313,6 +321,13 @@ function updateToolThought(tool: MESSAGE.Task, newThought: string, isFinal: bool
   } else {
     tool.toolThought = (tool.toolThought || '') + newThought;
   }
+  tool.isFinal = isFinal;
+  tool.finish = isFinal;
+  tool.resultMap = {
+    ...(tool.resultMap || {}),
+    isFinal,
+    messageType: tool.resultMap?.messageType || tool.messageType,
+  };
 }
 
 /**

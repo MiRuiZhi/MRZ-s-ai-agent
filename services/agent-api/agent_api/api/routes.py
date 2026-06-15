@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from functools import lru_cache
+from types import SimpleNamespace
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Form, UploadFile
@@ -179,10 +180,21 @@ async def preview_data(modelCode: str):
 
 
 @router.post("/data/chatQuery")
-async def data_chat_query(body: Dict[str, Any]):
+async def data_chat_query(body: Dict[str, Any], runtime: AgentRuntime = Depends(get_runtime)):
     content = body.get("content") or body.get("query") or body.get("message") or ""
+    request_id = str(body.get("requestId") or uuid.uuid4())
+    session_id = str(body.get("sessionId") or f"data-session-{uuid.uuid4().hex[:16]}")
+    context = SimpleNamespace(
+        request_id=request_id,
+        session_id=session_id,
+        query=content,
+        visitor_id=body.get("visitorId"),
+        entry_agent="data_agent",
+    )
+    runtime.ledger.begin_run(context, "data_agent")
 
     async def stream():
+        final_summary = "输出结果"
         events = [
             {"eventType": "THINK", "data": f"正在分析问题：{content}"},
             {"eventType": "CHART_DATA", "data": []},
@@ -190,6 +202,7 @@ async def data_chat_query(body: Dict[str, Any]):
         ]
         for event in events:
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        runtime.ledger.finish_run(context, "success", final_summary)
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 

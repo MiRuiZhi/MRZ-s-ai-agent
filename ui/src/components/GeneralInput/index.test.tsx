@@ -18,4 +18,19 @@ describe("GeneralInput", () => {
 
     expect(html).not.toMatch(/<button[^>]*>\s*<button/i);
   });
+
+  it("上传菜单触发器应有明确可访问名称", () => {
+    const html = renderToStaticMarkup(
+      <GeneralInput
+        sessionId="session-1"
+        placeholder="请输入问题"
+        showBtn={false}
+        disabled={false}
+        size="default"
+        send={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('aria-label="添加附件"');
+  });
 });
