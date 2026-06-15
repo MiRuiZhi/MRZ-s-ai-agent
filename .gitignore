@@ -42,7 +42,6 @@ runtime/skills/*/tools/vector_index.json
 /.codex/
 /.specify/
 /CLAUDE.md
-/AGENTS.md
 /PROMPT_CONTEXT_MEMORY_REARCH.md
 /specs/
 /openspec/
