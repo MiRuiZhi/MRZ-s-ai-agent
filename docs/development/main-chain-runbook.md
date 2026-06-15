@@ -33,7 +33,7 @@
 浏览器
   |
   v
-nginx :8080
+nginx :18080
   |-- /              -> ui
   |-- /web /api /data -> agent-api :8000
   |-- /tool          -> tool-runtime :1601
@@ -81,7 +81,7 @@ MYSQL_HOST_PORT=3307
 QDRANT_HOST_PORT=6333
 TOOL_RUNTIME_HOST_PORT=1601
 AGENT_API_HOST_PORT=8000
-NGINX_HOST_PORT=8080
+NGINX_HOST_PORT=18080
 ```
 
 所以本地第一次验证应该直接运行：
@@ -101,7 +101,7 @@ cp .env.example .env
 端口冲突时可以只临时覆盖，例如：
 
 ```bash
-NGINX_HOST_PORT=18080 docker compose up -d --no-build
+NGINX_HOST_PORT=19080 docker compose up -d --no-build
 ```
 
 ## 4. fake LLM 和真实模型的区别

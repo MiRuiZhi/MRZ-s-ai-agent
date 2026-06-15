@@ -40,7 +40,7 @@ flowchart TB
     User["用户浏览器"]
 
     subgraph Edge["统一入口"]
-        Nginx["nginx :8080\n同源反向代理"]
+        Nginx["nginx :18080\n同源反向代理"]
     end
 
     subgraph Frontend["前端层"]
@@ -1517,7 +1517,7 @@ JSON.parse(event.data)
 ### 14.6 nginx
 
 - image: `nginx:1.27-alpine`
-- port: `8080:80`
+- port: `18080:80`
 - config: `deploy/nginx.conf`
 
 ## 15. 启动流程

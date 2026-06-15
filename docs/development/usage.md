@@ -126,7 +126,7 @@ docker compose up -d --build
 
 默认端口：
 
-- 前端 UI：http://localhost:8080
+- 前端 UI：http://localhost:18080
 - agent-api 健康检查：http://localhost:8000/web/health
 - tool-runtime：http://localhost:1601
 - Qdrant：http://localhost:6333
@@ -220,7 +220,7 @@ REACTOR_EXECUTOR_MODEL=qwen2.5
 启动 Docker Compose 后，打开：
 
 ```text
-http://localhost:8080
+http://localhost:18080
 ```
 
 前端通过 nginx 同源访问：

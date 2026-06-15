@@ -6,7 +6,7 @@
 
 | 服务 | 端口 | 作用 |
 | --- | --- | --- |
-| `nginx` | `8080 -> 80` | 浏览器统一入口，同源代理 UI、agent-api、tool-runtime；宿主端口可用 `NGINX_HOST_PORT` 覆盖 |
+| `nginx` | `18080 -> 80` | 浏览器统一入口，同源代理 UI、agent-api、tool-runtime；宿主端口可用 `NGINX_HOST_PORT` 覆盖 |
 | `ui` | 容器内部 | React 静态资源构建产物 |
 | `agent-api` | `8000 -> 8000` | Agent API、SSE、ReAct、PlanSolve、账本；宿主端口可用 `AGENT_API_HOST_PORT` 覆盖 |
 | `tool-runtime` | `1601 -> 1601` | 工具 HTTP 服务、文件服务、MRAG/RAG；宿主端口可用 `TOOL_RUNTIME_HOST_PORT` 覆盖 |
@@ -58,7 +58,7 @@ docker compose up -d --build
 
 ### 4. 访问
 
-- UI：http://localhost:8080
+- UI：http://localhost:18080
 - agent-api 健康检查：http://localhost:8000/web/health
 - tool-runtime：http://localhost:1601
 - Qdrant：http://localhost:6333
@@ -221,7 +221,7 @@ docker run --rm \
 3. 改 `REACTOR_FAKE_LLM=false`，填入模型 Key。
 4. 修改 MySQL root/user 密码。
 5. 使用 `docker compose up -d --build` 启动。
-6. 用 Nginx、Caddy 或云厂商负载均衡配置 HTTPS，反代到 `127.0.0.1:8080`。
+6. 用 Nginx、Caddy 或云厂商负载均衡配置 HTTPS，反代到 `127.0.0.1:18080`。
 7. 只暴露 80/443，不直接暴露 MySQL、Qdrant、agent-api、tool-runtime 管理端口。
 8. 定期备份 MySQL、Qdrant 和 `tool-output` volume。
 

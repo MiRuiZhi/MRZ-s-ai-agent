@@ -47,7 +47,7 @@ MRZ's AI Agent 是一套以 **Python + C++** 为主链路的 AI Agent 运行时�
 
 ```mermaid
 flowchart TB
-    User["用户浏览器"] --> Nginx["nginx :8080\n同源反向代理"]
+    User["用户浏览器"] --> Nginx["nginx :18080\n同源反向代理"]
 
     Nginx --> UI["ui\nReact 静态资源"]
     Nginx --> API["agent-api\nFastAPI + SSE"]
@@ -122,7 +122,7 @@ docker compose up --build
 
 访问地址：
 
-- UI：http://localhost:8080
+- UI：http://localhost:18080
 - agent-api：http://localhost:8000/web/health
 - tool-runtime：http://localhost:1601
 - Qdrant：http://localhost:6333
