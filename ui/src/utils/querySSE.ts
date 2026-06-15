@@ -2,12 +2,27 @@ import { fetchEventSource, EventSourceMessage } from '@microsoft/fetch-event-sou
 
 import { getDeviceId } from '@/services/agentConversation';
 import { resolveServiceBaseUrl } from './origin';
-
-const customHost = resolveServiceBaseUrl(SERVICE_BASE_URL);
 /**
  * 历史会话接口已下线，主聊天统一回到当前仍然保留的 Reactor SSE 入口。
  */
-const DEFAULT_SSE_URL = `${customHost}/web/api/v1/gpt/queryAgentStreamIncr`;
+export function buildSseUrl(
+  path: string,
+  configuredBaseUrl: string = SERVICE_BASE_URL
+): string {
+  const normalizedPath = path.trim();
+  if (/^https?:\/\//i.test(normalizedPath)) {
+    return resolveServiceBaseUrl(normalizedPath);
+  }
+
+  const baseUrl = resolveServiceBaseUrl(configuredBaseUrl);
+  const prefixedPath = normalizedPath.startsWith("/")
+    ? normalizedPath
+    : `/${normalizedPath}`;
+
+  return baseUrl ? `${baseUrl}${prefixedPath}` : prefixedPath;
+}
+
+const DEFAULT_SSE_URL = buildSseUrl("/web/api/v1/gpt/queryAgentStreamIncr");
 
 const SSE_HEADERS: Record<string, string> = {
   'Content-Type': 'application/json',
@@ -35,10 +50,20 @@ export default <TMessage = unknown>(
   url: string = DEFAULT_SSE_URL
 ): void => {
   const { body = null, parser, handleMessage, handleError, handleClose } = config;
+  const controller = new AbortController();
+  let handledError = false;
+
+  const stopWithError = (error: Error) => {
+    handledError = true;
+    controller.abort();
+    handleError(error);
+    throw error;
+  };
 
   fetchEventSource(url, {
     method: 'POST',
     credentials: 'include',
+    signal: controller.signal,
     headers: SSE_HEADERS,
     body: JSON.stringify(body),
     openWhenHidden: true,
@@ -49,17 +74,22 @@ export default <TMessage = unknown>(
           handleMessage(parser ? parser(parsedData) : (parsedData as TMessage));
         } catch (error) {
           console.error('Error parsing SSE message:', error);
-          handleError(new Error('Failed to parse SSE message'));
+          stopWithError(new Error('Failed to parse SSE message'));
         }
       }
     },
     onerror(error: Error) {
       console.error('SSE error:', error);
-      handleError(error);
+      stopWithError(error instanceof Error ? error : new Error('SSE error'));
     },
     onclose() {
       console.log('SSE connection closed');
       handleClose();
     }
+  }).catch((error) => {
+    if (handledError) {
+      return;
+    }
+    handleError(error instanceof Error ? error : new Error('SSE request failed'));
   });
 };

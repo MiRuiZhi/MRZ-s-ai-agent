@@ -441,9 +441,13 @@ const Home: ReactorType.FC<HomeProps> = memo(() => {
   const handleSubmitVisitorName = useCallback((username: string) => {
     setVisitorNamingLoading(true);
     visitorApi
-      .naming(username.trim())
+      .naming(username.trim(), visitorBootstrap?.visitorId)
       .then((info) => {
-        setVisitorBootstrap(info);
+        setVisitorBootstrap((previous) => ({
+          ...previous,
+          ...info,
+          visitorId: info.visitorId || previous?.visitorId || "",
+        }));
       })
       .catch((error) => {
         console.error("提交访客用户名失败", error);
@@ -451,7 +455,7 @@ const Home: ReactorType.FC<HomeProps> = memo(() => {
       .finally(() => {
         setVisitorNamingLoading(false);
       });
-  }, []);
+  }, [visitorBootstrap?.visitorId]);
 
   const changeInputInfo = useCallback(
     (info: CHAT.TInputInfo) => {

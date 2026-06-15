@@ -36,7 +36,7 @@ import ChatRoleSelector from "@/components/ChatRoleSelector";
 import { cn } from "@/lib/utils";
 import { defaultProduct, productList } from "@/utils/constants";
 import UploadAttachmentChip from "./UploadAttachmentChip";
-import { buildSubmitPayload } from "./inputMode";
+import { buildDataAgentToggleSelection, buildSubmitPayload } from "./inputMode";
 import { useAttachmentUploads } from "./useAttachmentUploads";
 
 type Props = {
@@ -581,7 +581,13 @@ const GeneralInput: ReactorType.FC<Props> = (props) => {
                       className={chipButtonClassName(isDataAgent, disabled)}
                       onClick={() => {
                         if (visibleMode === "quick" && !isDataAgent) return;
-                        handleSelectionChange(DATA_AGENT_PRODUCT, false);
+                        const nextSelection = buildDataAgentToggleSelection({
+                          isDataAgent,
+                          visibleMode,
+                          visibleOutputProduct,
+                          dataAgentProduct: DATA_AGENT_PRODUCT,
+                        });
+                        handleSelectionChange(nextSelection.product, nextSelection.deepThink);
                       }}
                     >
                       <span className={chipIconWrapClassName(DATA_AGENT_TONE, isDataAgent)}>

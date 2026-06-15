@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import uuid
+import asyncio
 from functools import lru_cache
 from types import SimpleNamespace
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 
@@ -75,6 +76,8 @@ async def visitor_bootstrap():
 async def visitor_naming(request: VisitorNamingRequest):
     return ResponseEnvelope(
         data={
+            "visitorId": request.visitor_id,
+            "visitorToken": request.visitor_id,
             "visitorName": request.visitor_name,
             "username": request.visitor_name,
             "named": True,
@@ -87,28 +90,60 @@ async def list_sessions(limit: int = 20, runtime: AgentRuntime = Depends(get_run
     return ResponseEnvelope(data=runtime.ledger.list_session_summaries(limit=limit))
 
 
-@router.get("/api/agent/conversation/sessions/{session_id}")
+@router.get("/api/agent/conversation/sessions/{session_id:path}")
 async def session_detail(session_id: str, runtime: AgentRuntime = Depends(get_runtime)):
     runs = runtime.ledger.get_session_runs(session_id)
+    summary = _find_session_summary(runtime, session_id)
+    output_style, deep_think = _resolve_history_mode(runs)
     return ResponseEnvelope(
         data={
             "sessionId": session_id,
-            "title": runs[-1]["queryText"][:30] if runs and runs[-1].get("queryText") else session_id,
-            "status": runs[-1]["status"] if runs else "RUNNING",
+            "title": summary.get("title")
+            or (runs[-1]["queryText"][:30] if runs and runs[-1].get("queryText") else session_id),
+            "status": summary.get("status") or (runs[-1]["status"] if runs else "RUNNING"),
+            "outputStyle": output_style,
+            "deepThink": deep_think,
+            "role": None,
+            "runCount": summary.get("runCount", len(runs)),
+            "finishedRunCount": summary.get("finishedRunCount", 0),
+            "failedRunCount": summary.get("failedRunCount", 0),
+            "startedAt": summary.get("startedAt"),
+            "lastActiveAt": summary.get("lastActiveAt"),
             "runs": runs,
         }
     )
 
 
-@router.delete("/api/agent/conversation/sessions/{session_id}")
+@router.delete("/api/agent/conversation/sessions/{session_id:path}")
 async def delete_session(session_id: str, runtime: AgentRuntime = Depends(get_runtime)):
     deleted = runtime.ledger.delete_session(session_id)
     return ResponseEnvelope(data={"sessionId": session_id, "deleted": deleted})
 
 
+def _find_session_summary(runtime: AgentRuntime, session_id: str) -> Dict[str, Any]:
+    for item in runtime.ledger.list_session_summaries(limit=100):
+        if item.get("sessionId") == session_id:
+            return dict(item)
+    return {}
+
+
+def _resolve_history_mode(runs: list[dict[str, Any]]) -> tuple[str, bool]:
+    latest_entry_agent = ""
+    for run in reversed(runs):
+        latest_entry_agent = str(run.get("entryAgent") or "")
+        if latest_entry_agent:
+            break
+
+    if latest_entry_agent == "data_agent":
+        return "dataAgent", False
+    if latest_entry_agent == "plan_solve":
+        return "html", True
+    return "chat", False
+
+
 @router.post("/api/agent/file/upload")
 async def upload_file(
-    file: UploadFile,
+    file: UploadFile = File(...),
     session_id: str = Form(alias="sessionId"),
     settings: Settings = Depends(get_settings),
 ):
@@ -195,14 +230,21 @@ async def data_chat_query(body: Dict[str, Any], runtime: AgentRuntime = Depends(
 
     async def stream():
         final_summary = "输出结果"
-        events = [
-            {"eventType": "THINK", "data": f"正在分析问题：{content}"},
-            {"eventType": "CHART_DATA", "data": []},
-            {"eventType": "READY"},
-        ]
-        for event in events:
-            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-        runtime.ledger.finish_run(context, "success", final_summary)
+        try:
+            events = [
+                {"eventType": "THINK", "data": f"正在分析问题：{content}"},
+                {"eventType": "CHART_DATA", "data": []},
+                {"eventType": "READY"},
+            ]
+            for event in events:
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+            runtime.ledger.finish_run(context, "success", final_summary)
+        except asyncio.CancelledError:
+            runtime.ledger.finish_run(context, "stopped", "请求已取消")
+            raise
+        except Exception as exc:
+            runtime.ledger.finish_run(context, "failed", error_msg=str(exc))
+            raise
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 

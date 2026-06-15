@@ -243,6 +243,7 @@ class SqlAlchemyLedger:
             return [
                 {
                     "requestId": row.request_id,
+                    "entryAgent": row.entry_agent,
                     "status": STATUS_LABEL.get(row.status, "UNKNOWN"),
                     "queryText": row.query_text,
                     "finalSummaryText": row.final_summary_text,

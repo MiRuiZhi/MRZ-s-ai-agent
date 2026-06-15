@@ -50,6 +50,26 @@ class DataChatRouteTest(unittest.TestCase):
         self.assertEqual(sessions[0]["latestQueryText"], "show sales")
         self.assertEqual(sessions[0]["status"], "SUCCESS")
 
+    def test_data_chat_session_detail_preserves_data_agent_mode(self):
+        client = self.create_memory_client()
+
+        client.post(
+            "/data/chatQuery",
+            json={
+                "content": "show sales by region",
+                "sessionId": "session-data-detail",
+                "requestId": "req-data-detail",
+            },
+        )
+
+        detail = client.get("/api/agent/conversation/sessions/session-data-detail").json()["data"]
+
+        self.assertEqual(detail["sessionId"], "session-data-detail")
+        self.assertEqual(detail["outputStyle"], "dataAgent")
+        self.assertFalse(detail["deepThink"])
+        self.assertEqual(detail["runCount"], 1)
+        self.assertEqual(detail["runs"][0]["entryAgent"], "data_agent")
+
 
 if __name__ == "__main__":
     unittest.main()

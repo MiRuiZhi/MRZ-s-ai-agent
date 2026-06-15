@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class ResponseEnvelope(BaseModel):
@@ -73,7 +73,8 @@ class GptQueryRequest(BaseModel):
 
 
 class VisitorNamingRequest(BaseModel):
-    visitor_name: str = Field(alias="visitorName")
+    visitor_name: str = Field(validation_alias=AliasChoices("visitorName", "username"))
+    visitor_id: Optional[str] = Field(default=None, alias="visitorId")
 
 
 class WorkspaceImageGenerationRequest(BaseModel):

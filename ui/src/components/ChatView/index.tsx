@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ActionViewItemEnum, getUniqId } from "@/utils";
-import querySSE from "@/utils/querySSE";
+import querySSE, { buildSseUrl } from "@/utils/querySSE";
 import { getStableTaskIdentity } from "@/utils/chat";
 import Dialogue from "@/components/Dialogue";
 import DataDialogue from "@/components/Dialogue/DataDialogue";
@@ -300,7 +300,7 @@ const ChatView: ReactorType.FC<Props> = (props) => {
         handleError,
         handleClose,
       },
-      `${SERVICE_BASE_URL}/data/chatQuery`
+      buildSseUrl("/data/chatQuery")
     );
   });
 

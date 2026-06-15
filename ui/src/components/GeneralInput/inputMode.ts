@@ -25,3 +25,22 @@ export function buildSubmitPayload(params: {
     aiAgentId: outputStyle === "chat" ? params.chatRole?.agentId : undefined,
   };
 }
+
+export function buildDataAgentToggleSelection(params: {
+  isDataAgent: boolean;
+  visibleMode: InputModeKey;
+  visibleOutputProduct: CHAT.Product;
+  dataAgentProduct: CHAT.Product;
+}) {
+  if (params.isDataAgent) {
+    return {
+      product: params.visibleOutputProduct,
+      deepThink: params.visibleMode === "research",
+    };
+  }
+
+  return {
+    product: params.dataAgentProduct,
+    deepThink: false,
+  };
+}

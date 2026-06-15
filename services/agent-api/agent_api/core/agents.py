@@ -129,6 +129,9 @@ class ReactAgent(BaseAgent):
             await self.context.events.emit("result", {"taskSummary": summary}, is_final=True)
             self.context.ledger.finish_run(self.context, "stopped", summary)
             return summary
+        except asyncio.CancelledError:
+            self.context.ledger.finish_run(self.context, "stopped", "请求已取消")
+            raise
         except Exception as exc:
             self.context.ledger.finish_run(self.context, "failed", error_msg=str(exc))
             raise
@@ -204,6 +207,9 @@ class PlanSolveAgent:
             await self.context.events.emit("result", {"taskSummary": summary}, is_final=True)
             self.context.ledger.finish_run(self.context, "stopped", summary)
             return summary
+        except asyncio.CancelledError:
+            self.context.ledger.finish_run(self.context, "stopped", "请求已取消")
+            raise
         except Exception as exc:
             self.context.ledger.finish_run(self.context, "failed", error_msg=str(exc))
             raise

@@ -21,10 +21,6 @@ export const agentFileApi = {
     formData.append("sessionId", sessionId);
     formData.append("file", file);
 
-    return request.post("/api/agent/file/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    return request.post("/api/agent/file/upload", formData);
   },
 };

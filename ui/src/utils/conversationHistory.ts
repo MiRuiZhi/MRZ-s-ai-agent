@@ -32,7 +32,13 @@ export function toConversationHistoryTitle(detail?: Pick<ConversationHistoryDeta
 export function hydrateConversationFromReplayFrames(
   detail: ConversationHistoryDetail
 ): CHAT.ConversationHistory {
-  const chatList = (detail.runs || []).map((run) => hydrateRun(detail, run));
+  const isDataAgentHistory = detail.outputStyle === "dataAgent";
+  const chatList = isDataAgentHistory
+    ? []
+    : (detail.runs || []).map((run) => hydrateRun(detail, run));
+  const dataChatList = isDataAgentHistory
+    ? (detail.runs || []).map((run) => hydrateDataRun(run))
+    : [];
   const createdAt = toTimestamp(detail.startedAt);
   const updatedAt = toTimestamp(detail.lastActiveAt, createdAt);
   const title = toConversationHistoryTitle(detail);
@@ -48,7 +54,22 @@ export function hydrateConversationFromReplayFrames(
     updatedAt,
     chatTitle: title,
     chatList,
-    dataChatList: [],
+    dataChatList,
+  };
+}
+
+function hydrateDataRun(run: ConversationHistoryRunDetail): CHAT.DataChatItem {
+  const runStatus = normalizeRunStatus(run.status);
+  const failed = runStatus === "FAILED";
+  const running = runStatus === "RUNNING";
+  const summaryText = run.finalSummaryText || "";
+
+  return {
+    query: run.queryText || "",
+    loading: running,
+    think: "",
+    chartData: failed ? undefined : [],
+    error: failed ? summaryText || "历史数据分析失败" : "",
   };
 }
 

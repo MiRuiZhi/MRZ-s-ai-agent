@@ -192,6 +192,7 @@ class InMemoryLedger:
         return [
             {
                 "requestId": run.request_id,
+                "entryAgent": run.entry_agent,
                 "status": run.status.upper(),
                 "queryText": run.query_text,
                 "finalSummaryText": run.final_summary_text,

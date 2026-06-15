@@ -335,6 +335,44 @@ describe("conversationHistory hydrate", () => {
     expect(toConversationHistoryTitle(detail)).toBe("新对话");
   });
 
+  it("hydrates dataAgent history into data chat list instead of normal chat list", () => {
+    const history = hydrateConversationFromReplayFrames({
+      sessionId: "session-data-history-001",
+      title: "数据分析历史",
+      status: "SUCCESS",
+      outputStyle: "dataAgent",
+      deepThink: false,
+      role: null,
+      runCount: 1,
+      finishedRunCount: 1,
+      failedRunCount: 0,
+      startedAt: "2026-05-02T11:30:00",
+      lastActiveAt: "2026-05-02T11:31:00",
+      runs: [
+        {
+          requestId: "req-data-history-001",
+          status: "SUCCESS",
+          queryText: "统计近7天销量",
+          finalSummaryText: "输出结果",
+          startedAt: "2026-05-02T11:30:00",
+          finishedAt: "2026-05-02T11:31:00",
+          replayFrames: [],
+        },
+      ],
+    });
+
+    expect(history.productType).toBe("dataAgent");
+    expect(history.chatList).toHaveLength(0);
+    expect(history.dataChatList).toHaveLength(1);
+    expect(history.dataChatList[0]).toMatchObject({
+      query: "统计近7天销量",
+      loading: false,
+      think: "",
+      chartData: [],
+      error: "",
+    });
+  });
+
   it("marks stopped history run as force stop and preserves missing artifact state", () => {
     const history = hydrateConversationFromReplayFrames({
       sessionId: "session-stop-001",

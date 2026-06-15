@@ -46,6 +46,9 @@ class RuntimeCancellationTest(unittest.IsolatedAsyncioTestCase):
                 await asyncio.wait_for(tool_started.wait(), timeout=1)
                 await asyncio.wait_for(stream.aclose(), timeout=0.2)
 
+        runs = runtime.ledger.get_session_runs("session-cancel")
+        self.assertEqual(runs[0]["status"], "STOPPED")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -95,8 +95,14 @@ export const roleLibraryApi = {
 export const visitorApi = {
   bootstrap: () =>
     api.get<VisitorBootstrapInfo>(`/api/agent/visitor/bootstrap`) as unknown as Promise<VisitorBootstrapInfo>,
-  naming: (username: string) =>
-    api.post<VisitorBootstrapInfo>(`/api/agent/visitor/naming`, { username }) as unknown as Promise<VisitorBootstrapInfo>,
+  naming: (username: string, visitorId?: string) =>
+    api.post<VisitorBootstrapInfo>(
+      `/api/agent/visitor/naming`,
+      {
+        visitorName: username,
+        ...(visitorId ? { visitorId } : {}),
+      }
+    ) as unknown as Promise<VisitorBootstrapInfo>,
 };
 
 export const conversationHistoryApi = {
@@ -106,7 +112,7 @@ export const conversationHistoryApi = {
     ) as unknown as Promise<ConversationSessionItem[]>,
   getSessionDetail: (sessionId: string) =>
     api.get<ConversationHistoryDetail>(
-      `/api/agent/conversation/sessions/${sessionId}`
+      `/api/agent/conversation/sessions/${encodeURIComponent(sessionId)}`
     ) as unknown as Promise<ConversationHistoryDetail>,
   deleteSession: (sessionId: string) =>
     api.delete<{ sessionId: string; deleted: boolean }>(
