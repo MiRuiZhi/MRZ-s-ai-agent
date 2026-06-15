@@ -69,6 +69,7 @@ class InMemoryLedger:
         self.llm_invocations: List[LlmInvocationRecord] = []
         self.tool_invocations: List[ToolInvocationRecord] = []
         self.artifacts: List[ArtifactRecord] = []
+        self.deleted_sessions: set[str] = set()
 
     def begin_run(self, context: Any, entry_agent: str) -> RunRecord:
         if self.runs and self.runs[-1].request_id == context.request_id:
@@ -165,6 +166,8 @@ class InMemoryLedger:
     def list_session_summaries(self, limit: int = 20) -> List[Dict[str, Any]]:
         sessions: Dict[str, Dict[str, Any]] = {}
         for run in self.runs:
+            if run.session_id in self.deleted_sessions:
+                continue
             sessions[run.session_id] = {
                 "sessionId": run.session_id,
                 "title": run.query_text[:30],
@@ -184,6 +187,8 @@ class InMemoryLedger:
         return list(sessions.values())[-limit:]
 
     def get_session_runs(self, session_id: str) -> List[Dict[str, Any]]:
+        if session_id in self.deleted_sessions:
+            return []
         return [
             {
                 "requestId": run.request_id,
@@ -197,3 +202,10 @@ class InMemoryLedger:
             for run in self.runs
             if run.session_id == session_id
         ]
+
+    def delete_session(self, session_id: str) -> bool:
+        exists = any(run.session_id == session_id for run in self.runs)
+        if not exists:
+            return False
+        self.deleted_sessions.add(session_id)
+        return True

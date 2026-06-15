@@ -91,6 +91,38 @@ class SqlAlchemyLedgerTest(unittest.TestCase):
         self.assertEqual(runs[0]["requestId"], "req-sql")
         self.assertEqual(runs[0]["finalSummaryText"], "done")
 
+    def test_delete_session_soft_deletes_summary_and_runs(self):
+        engine = create_engine("sqlite+pysqlite:///:memory:")
+        Base.metadata.create_all(bind=engine)
+        session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+        ledger = SqlAlchemyLedger(session_factory)
+        context = AgentContext(
+            request_id="req-delete",
+            session_id="session-delete",
+            query="delete this conversation",
+            events=EventCollector(),
+            ledger=ledger,
+            tools=ToolCollection(),
+        )
+
+        ledger.begin_run(context, "react")
+        ledger.finish_run(context, "success", "done")
+
+        self.assertTrue(ledger.delete_session("session-delete"))
+        self.assertEqual(ledger.list_session_summaries(limit=10), [])
+        self.assertEqual(ledger.get_session_runs("session-delete"), [])
+
+        with session_factory() as session:
+            stored_session = session.scalar(
+                select(DialogueSession).where(DialogueSession.session_id == "session-delete")
+            )
+            stored_run = session.scalar(
+                select(DialogueRun).where(DialogueRun.request_id == "req-delete")
+            )
+
+        self.assertEqual(stored_session.deleted, 1)
+        self.assertEqual(stored_run.deleted, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

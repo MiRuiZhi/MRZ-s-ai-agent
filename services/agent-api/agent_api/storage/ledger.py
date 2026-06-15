@@ -212,6 +212,7 @@ class SqlAlchemyLedger:
         with self.session_factory() as session:
             rows = session.scalars(
                 select(DialogueSession)
+                .where(DialogueSession.deleted == 0)
                 .order_by(DialogueSession.last_active_at.desc(), DialogueSession.id.desc())
                 .limit(limit)
             ).all()
@@ -236,7 +237,7 @@ class SqlAlchemyLedger:
         with self.session_factory() as session:
             rows = session.scalars(
                 select(DialogueRun)
-                .where(DialogueRun.session_id == session_id)
+                .where(DialogueRun.session_id == session_id, DialogueRun.deleted == 0)
                 .order_by(DialogueRun.started_at.asc(), DialogueRun.id.asc())
             ).all()
             return [
@@ -251,6 +252,32 @@ class SqlAlchemyLedger:
                 }
                 for row in rows
             ]
+
+    def delete_session(self, session_id: str) -> bool:
+        now = _now()
+        with self.session_factory() as session:
+            dialogue_session = session.scalar(
+                select(DialogueSession).where(
+                    DialogueSession.session_id == session_id,
+                    DialogueSession.deleted == 0,
+                )
+            )
+            if dialogue_session is None:
+                return False
+
+            dialogue_session.deleted = 1
+            dialogue_session.update_time = now
+            runs = session.scalars(
+                select(DialogueRun).where(
+                    DialogueRun.session_id == session_id,
+                    DialogueRun.deleted == 0,
+                )
+            ).all()
+            for run in runs:
+                run.deleted = 1
+                run.update_time = now
+            session.commit()
+            return True
 
     def _get_run(self, session: Session, request_id: str) -> Optional[DialogueRun]:
         return session.scalar(select(DialogueRun).where(DialogueRun.request_id == request_id))

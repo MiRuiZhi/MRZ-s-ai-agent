@@ -117,6 +117,7 @@ const Home: ReactorType.FC<HomeProps> = memo(() => {
     recentSessions,
     recentSessionsLoading,
     refreshRecentSessions,
+    removeRecentSession,
   } = useRecentSessions();
   const [activeView, setActiveView] = useState<SidebarView>("chat");
   const [inputInfo, setInputInfo] = useState<CHAT.TInputInfo>(EMPTY_INPUT);
@@ -136,6 +137,7 @@ const Home: ReactorType.FC<HomeProps> = memo(() => {
   const [visitorNamingLoading, setVisitorNamingLoading] = useState(false);
   const [conversationBootstrapLoading, setConversationBootstrapLoading] =
     useState(false);
+  const [deletingSessionId, setDeletingSessionId] = useState<string>();
 
   const visitorWorkspaceStage = resolveVisitorWorkspaceStage({
     bootstrapLoaded: visitorBootstrapLoaded,
@@ -392,6 +394,43 @@ const Home: ReactorType.FC<HomeProps> = memo(() => {
     [resetInput]
   );
 
+  const handleConversationSettled = useCallback(() => {
+    void refreshRecentSessions(visitorProtectedDataReady);
+  }, [refreshRecentSessions, visitorProtectedDataReady]);
+
+  const handleDeleteRecentSession = useCallback(
+    (session: ConversationSessionItem) => {
+      if (!session.sessionId || deletingSessionId) {
+        return;
+      }
+
+      setDeletingSessionId(session.sessionId);
+      conversationHistoryApi
+        .deleteSession(session.sessionId)
+        .then(() => {
+          removeRecentSession(session.sessionId);
+          if (currentConversation.sessionId === session.sessionId) {
+            createNewChat();
+          }
+          void refreshRecentSessions(visitorProtectedDataReady);
+        })
+        .catch((error) => {
+          console.error("删除历史会话失败", error);
+        })
+        .finally(() => {
+          setDeletingSessionId(undefined);
+        });
+    },
+    [
+      createNewChat,
+      currentConversation.sessionId,
+      deletingSessionId,
+      refreshRecentSessions,
+      removeRecentSession,
+      visitorProtectedDataReady,
+    ]
+  );
+
   useEffect(() => {
     if (conversationBootstrapLoading) {
       return;
@@ -535,7 +574,9 @@ const Home: ReactorType.FC<HomeProps> = memo(() => {
           visitorUsername={visitorBootstrap?.username}
           onNewChat={createNewChat}
           onSelectSession={handleSelectRecentSession}
+          onDeleteSession={handleDeleteRecentSession}
           onChangeView={setActiveView}
+          deletingSessionId={deletingSessionId}
         />
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -571,6 +612,7 @@ const Home: ReactorType.FC<HomeProps> = memo(() => {
                 onConversationChange={updateConversation}
                 onRoleSelect={handleRoleSelect}
                 onInputConsumed={onInputConsumed}
+                onConversationSettled={handleConversationSettled}
               />
             ) : (
               <WelcomeView

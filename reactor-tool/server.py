@@ -40,9 +40,15 @@ def log_setting():
     logger.add(log_path, format=log_format, rotation="200 MB")
 
 
+def init_runtime_database():
+    from reactor_tool.db.db_engine import init_db
+
+    init_db()
+
+
 def create_app() -> FastAPI:
     _app = FastAPI(
-        on_startup=[log_setting, print_logo]
+        on_startup=[log_setting, init_runtime_database, print_logo]
     )
 
     register_middleware(_app)

@@ -64,13 +64,21 @@ async def visitor_bootstrap():
             "visitorId": visitor_id,
             "visitorToken": visitor_id,
             "visitorName": "匿名访客",
+            "username": "匿名访客",
+            "named": True,
         }
     )
 
 
 @router.post("/api/agent/visitor/naming")
 async def visitor_naming(request: VisitorNamingRequest):
-    return ResponseEnvelope(data={"visitorName": request.visitor_name})
+    return ResponseEnvelope(
+        data={
+            "visitorName": request.visitor_name,
+            "username": request.visitor_name,
+            "named": True,
+        }
+    )
 
 
 @router.get("/api/agent/conversation/sessions")
@@ -89,6 +97,12 @@ async def session_detail(session_id: str, runtime: AgentRuntime = Depends(get_ru
             "runs": runs,
         }
     )
+
+
+@router.delete("/api/agent/conversation/sessions/{session_id}")
+async def delete_session(session_id: str, runtime: AgentRuntime = Depends(get_runtime)):
+    deleted = runtime.ledger.delete_session(session_id)
+    return ResponseEnvelope(data={"sessionId": session_id, "deleted": deleted})
 
 
 @router.post("/api/agent/file/upload")

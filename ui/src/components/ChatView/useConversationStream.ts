@@ -33,6 +33,7 @@ type UseConversationStreamOptions = {
     nextConversation: CHAT.ConversationHistory
   ) => void;
   onPrepareStreamingWorkspace?: () => void;
+  onConversationSettled?: () => void;
   onTokenUseUp?: () => void;
 };
 
@@ -245,6 +246,7 @@ export function useConversationStream(
     conversation,
     onConversationChange,
     onPrepareStreamingWorkspace,
+    onConversationSettled,
     onTokenUseUp,
   } = options;
 
@@ -451,6 +453,7 @@ export function useConversationStream(
     let pendingTaskData: ReturnType<typeof handleTaskData> | null = null;
     let taskDataDirty = false;
     let pendingFlushFrame: number | null = null;
+    let streamSettled = false;
     let lastConversationFlushAt = 0;
     let lastTaskFlushAt = 0;
     const CONVERSATION_FLUSH_INTERVAL = 16;
@@ -519,6 +522,14 @@ export function useConversationStream(
       });
     };
 
+    const settleConversation = () => {
+      if (streamSettled) {
+        return;
+      }
+      streamSettled = true;
+      onConversationSettled?.();
+    };
+
     const handleMessage = (data: MESSAGE.Answer) => {
       const { finished, resultMap, packageType, status } = data;
       const isTerminalGuardError =
@@ -542,6 +553,7 @@ export function useConversationStream(
             },
           };
           syncRunningConversation();
+          settleConversation();
           return;
         }
 
@@ -555,6 +567,7 @@ export function useConversationStream(
         draftController.commit(
           draftController.replaceLastItem({ ...currentChat })
         );
+        settleConversation();
         return;
       }
 
@@ -570,6 +583,7 @@ export function useConversationStream(
         };
         setLoading(false);
         syncRunningConversation();
+        settleConversation();
         return;
       }
 
@@ -593,6 +607,7 @@ export function useConversationStream(
         draftController.commit(
           draftController.replaceLastItem({ ...currentChat })
         );
+        settleConversation();
         return;
       }
 
@@ -625,6 +640,7 @@ export function useConversationStream(
           };
           setLoading(false);
           syncRunningConversation();
+          settleConversation();
         }
         return;
       }
@@ -663,6 +679,7 @@ export function useConversationStream(
           const finalThought = currentChat.thought || currentChat.multiAgent.plan_thought || "";
           scheduleStreamingThought(currentChat.requestId, finalThought, true);
         }
+        settleConversation();
       }
 
       draftController.replaceLastItem({ ...currentChat });
@@ -674,10 +691,55 @@ export function useConversationStream(
 
     const handleError = (error: unknown) => {
       console.error("SSE stream error", error);
+      const errorText = error instanceof Error
+        ? error.message
+        : "当前请求处理失败，请稍后重试";
+      setLoading(false);
+
+      if (isChatMode) {
+        currentChat = {
+          ...currentChat,
+          loading: false,
+          response: currentChat.response || errorText,
+          metrics: {
+            ...(currentChat.metrics || {}),
+            status: "FAILED",
+          },
+        };
+        syncRunningConversation();
+        settleConversation();
+        return;
+      }
+
+      currentChat = applyGuardError(currentChat, errorText);
+      const taskData = handleTaskData(
+        currentChat,
+        normalizedDeepThink,
+        currentChat.multiAgent
+      );
+      setTaskList(taskData.taskList);
+      draftController.commit(
+        draftController.replaceLastItem({ ...currentChat })
+      );
+      scheduleNonChatFlush(true);
+      settleConversation();
     };
 
     const handleClose = () => {
       scheduleNonChatFlush(true);
+      if (!streamSettled) {
+        currentChat = {
+          ...currentChat,
+          loading: false,
+          metrics: {
+            ...(currentChat.metrics || {}),
+            status: currentChat.conclusion || currentChat.response ? "SUCCESS" : "FAILED",
+          },
+        };
+        setLoading(false);
+        syncRunningConversation();
+        settleConversation();
+      }
     };
 
     querySSE({

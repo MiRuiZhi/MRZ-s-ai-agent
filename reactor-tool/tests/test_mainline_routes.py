@@ -22,6 +22,15 @@ class MainlineRoutesTest(unittest.TestCase):
             f"missing routes: {sorted(expected_paths - route_paths)}",
         )
 
+    def test_should_initialize_runtime_database_on_startup(self):
+        app = create_app()
+        startup_names = {
+            getattr(handler, "__name__", "")
+            for handler in app.router.on_startup
+        }
+
+        self.assertIn("init_runtime_database", startup_names)
+
 
 if __name__ == "__main__":
     unittest.main()

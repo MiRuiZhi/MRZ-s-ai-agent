@@ -29,7 +29,7 @@ services:
       dockerfile: reactor-tool/Dockerfile
     environment:
       FILE_SAVE_PATH: /app/skilloutput
-      FILE_SERVER_URL: http://localhost/tool/v1/file_tool
+      FILE_SERVER_URL: http://localhost:${NGINX_HOST_PORT:-18080}/tool/v1/file_tool
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       DEEPSEARCH_BASE_URL: ${DEEPSEARCH_BASE_URL:-}

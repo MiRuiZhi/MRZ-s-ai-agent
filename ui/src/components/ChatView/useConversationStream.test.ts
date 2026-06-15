@@ -79,4 +79,61 @@ describe("useConversationStream helpers", () => {
     expect(result.errorMsg).toBe("");
     expect(result.resultMap.eventData).toBeDefined();
   });
+
+  it("兼容 agent-api 当前简化 SSE result 包", () => {
+    const result = parseAgentAnswer({
+      messageType: "result",
+      data: { taskSummary: "已收到：你好" },
+      isFinal: true,
+    });
+    const eventData = result.resultMap.eventData!;
+    const resultMap = eventData.resultMap as MESSAGE.Task & { taskSummary?: string };
+
+    expect(result.status).toBe("success");
+    expect(result.packageType).toBe("result");
+    expect(result.finished).toBe(true);
+    expect(eventData.messageType).toBe("task");
+    expect(resultMap.messageType).toBe("result");
+    expect(resultMap.result).toBe("已收到：你好");
+    expect(resultMap.taskSummary).toBe("已收到：你好");
+  });
+
+  it("兼容 agent-api 当前简化 SSE tool_thought 包", () => {
+    const result = parseAgentAnswer({
+      messageType: "tool_thought",
+      data: "我需要先理解问题",
+      isFinal: false,
+      messageId: "msg-tool-thought",
+    });
+
+    const eventData = result.resultMap.eventData!;
+    expect(result.finished).toBe(false);
+    expect(eventData.messageType).toBe("task");
+    expect(eventData.messageId).toBe("msg-tool-thought");
+    expect(eventData.resultMap.messageType).toBe("tool_thought");
+    expect(eventData.resultMap.toolThought).toBe("我需要先理解问题");
+  });
+
+  it("兼容 agent-api 当前简化 SSE plan 包", () => {
+    const result = parseAgentAnswer({
+      messageType: "plan",
+      data: {
+        currentStep: "制定执行计划",
+        steps: ["检索资料", "输出报告"],
+      stepStatus: ["pending", "pending"],
+      },
+      isFinal: false,
+    });
+
+    const eventData = result.resultMap.eventData!;
+    const resultMap = eventData.resultMap as MESSAGE.Task & {
+      title?: string;
+      steps?: string[];
+      stepStatus?: string[];
+    };
+    expect(eventData.messageType).toBe("plan");
+    expect(resultMap.title).toBe("制定执行计划");
+    expect(resultMap.steps).toEqual(["检索资料", "输出报告"]);
+    expect(resultMap.stepStatus).toEqual(["not_started", "not_started"]);
+  });
 });

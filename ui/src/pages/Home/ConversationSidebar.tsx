@@ -9,7 +9,6 @@ import {
   MessagesSquare,
   WandSparkles,
   X,
-  Pin,
   Trash2,
 } from "lucide-react";
 import type { ConversationSessionItem } from "@/services/agentConversation";
@@ -48,7 +47,9 @@ type ConversationSidebarProps = {
   visitorUsername?: string;
   onNewChat: () => void;
   onSelectSession: (session: ConversationSessionItem) => void;
+  onDeleteSession: (session: ConversationSessionItem) => void;
   onChangeView: (view: SidebarView) => void;
+  deletingSessionId?: string;
 };
 
 const ConversationSidebar = memo((props: ConversationSidebarProps) => {
@@ -59,7 +60,9 @@ const ConversationSidebar = memo((props: ConversationSidebarProps) => {
     selectedSessionId,
     onNewChat,
     onSelectSession,
+    onDeleteSession,
     onChangeView,
+    deletingSessionId,
   } = props;
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -93,13 +96,13 @@ const ConversationSidebar = memo((props: ConversationSidebarProps) => {
     []
   );
 
-  const handleActionClick = useCallback(
-    (e: React.MouseEvent, action: string, session: ConversationSessionItem) => {
+  const handleDeleteClick = useCallback(
+    (e: React.MouseEvent, session: ConversationSessionItem) => {
       e.stopPropagation();
       setExpandedSessionId(null);
-      console.log(`[ConversationSidebar] ${action}:`, session.sessionId);
+      onDeleteSession(session);
     },
-    []
+    [onDeleteSession]
   );
 
   return (
@@ -231,6 +234,7 @@ const ConversationSidebar = memo((props: ConversationSidebarProps) => {
                 const isActive = session.sessionId === selectedSessionId;
                 const isHovered = session.sessionId === hoveredSessionId;
                 const isExpanded = session.sessionId === expandedSessionId;
+                const isDeleting = session.sessionId === deletingSessionId;
 
                 return (
                   <div
@@ -239,61 +243,51 @@ const ConversationSidebar = memo((props: ConversationSidebarProps) => {
                     onMouseEnter={() => setHoveredSessionId(session.sessionId)}
                     onMouseLeave={() => setHoveredSessionId(null)}
                   >
-                    <button
-                      type="button"
-                      onClick={() => onSelectSession(session)}
+                    <div
                       className={classNames(
-                        "group flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors",
+                        "group flex w-full items-center gap-1 rounded-lg px-2.5 py-1.5 transition-colors",
                         isActive
                           ? "bg-[var(--chat-surface-soft)] text-[var(--chat-text)]"
                           : "text-[var(--chat-text-soft)] hover:bg-[var(--chat-surface-soft)]/50 hover:text-[var(--chat-text)]"
                       )}
                     >
-                      <span className="min-w-0 flex-1 truncate text-[13px]">
+                      <button
+                        type="button"
+                        data-session-id={session.sessionId}
+                        onClick={() => onSelectSession(session)}
+                        className="min-w-0 flex-1 truncate py-0.5 text-left text-[13px]"
+                      >
                         {session.title || "未命名会话"}
-                      </span>
-                      <span
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`管理会话：${session.title || "未命名会话"}`}
+                        onClick={(e) =>
+                          handleMoreClick(e, session.sessionId)
+                        }
+                        disabled={isDeleting}
                         className={classNames(
-                          "shrink-0 transition-opacity",
+                          "shrink-0 rounded p-1 text-[var(--chat-text-muted)] transition-all hover:bg-[var(--chat-surface-muted)] hover:text-[var(--chat-text)] disabled:cursor-not-allowed disabled:opacity-50",
                           isHovered || isExpanded
                             ? "opacity-100"
                             : "opacity-0"
                         )}
                       >
-                        <button
-                          type="button"
-                          onClick={(e) =>
-                            handleMoreClick(e, session.sessionId)
-                          }
-                          className="rounded p-0.5 text-[var(--chat-text-muted)] transition-colors hover:bg-[var(--chat-surface-muted)] hover:text-[var(--chat-text)]"
-                        >
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </button>
-                      </span>
-                    </button>
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
 
                     {/* 更多操作下拉 */}
                     {isExpanded && (
                       <div className="absolute right-2 top-full z-10 mt-1 w-32 rounded-lg border border-[var(--chat-border)] bg-[var(--chat-surface)] py-1 shadow-[var(--shadow-md)]">
                         <button
                           type="button"
-                          onClick={(e) =>
-                            handleActionClick(e, "pin", session)
-                          }
-                          className="flex w-full items-center gap-2 px-3 py-2 text-[12px] text-[var(--chat-text-soft)] transition-colors hover:bg-[var(--chat-surface-soft)] hover:text-[var(--chat-text)]"
-                        >
-                          <Pin className="h-3.5 w-3.5" />
-                          <span>置顶</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) =>
-                            handleActionClick(e, "delete", session)
-                          }
-                          className="flex w-full items-center gap-2 px-3 py-2 text-[12px] text-[var(--chat-text-soft)] transition-colors hover:bg-[var(--chat-surface-soft)] hover:text-[var(--destructive)]"
+                          onClick={(e) => handleDeleteClick(e, session)}
+                          disabled={isDeleting}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-[12px] text-[var(--chat-text-soft)] transition-colors hover:bg-[var(--chat-surface-soft)] hover:text-[var(--destructive)] disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                          <span>删除</span>
+                          <span>{isDeleting ? "删除中..." : "删除"}</span>
                         </button>
                       </div>
                     )}

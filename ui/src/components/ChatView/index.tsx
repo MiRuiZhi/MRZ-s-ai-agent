@@ -37,6 +37,7 @@ type Props = {
   ) => void;
   onRoleSelect: (role: CHAT.FixRole) => void;
   onInputConsumed?: () => void;
+  onConversationSettled?: () => void;
 };
 
 const getProductByType = (type?: string) => {
@@ -56,6 +57,7 @@ const ChatView: ReactorType.FC<Props> = (props) => {
     onConversationChange,
     onRoleSelect,
     onInputConsumed,
+    onConversationSettled,
   } = props;
 
   const [activeTask, setActiveTask] = useState<CHAT.Task>();
@@ -93,6 +95,7 @@ const ChatView: ReactorType.FC<Props> = (props) => {
   } = useConversationStream({
     conversation,
     onConversationChange,
+    onConversationSettled,
     onPrepareStreamingWorkspace: () => {
       // 新一轮请求开始后，工作区恢复自动跟随，避免仍停留在上一轮手动点开的旧任务上。
       setActiveTask(undefined);
@@ -245,16 +248,43 @@ const ChatView: ReactorType.FC<Props> = (props) => {
       draftController,
       currentChat,
     };
+    let dataSettled = false;
+    const settleDataConversation = () => {
+      if (dataSettled) {
+        return;
+      }
+      dataSettled = true;
+      onConversationSettled?.();
+    };
 
     const handleMessage = (data: CHAT.DataChatEvent) => {
       updateDataChatFromEvent(runtime, data);
+      if (data.eventType === "ERROR" || data.eventType === "READY") {
+        settleDataConversation();
+      }
     };
     const handleError = (error: unknown) => {
       console.error("DataAgent SSE stream error", error);
+      runtime.currentChat.error = error instanceof Error
+        ? error.message
+        : "DataAgent 请求失败";
+      runtime.currentChat.loading = false;
+      setDataLoading(false);
+      runtime.draftController.commit(
+        runtime.draftController.replaceLastItem({ ...runtime.currentChat })
+      );
+      settleDataConversation();
     };
 
     const handleClose = () => {
-      console.log("close");
+      if (!dataSettled) {
+        runtime.currentChat.loading = false;
+        setDataLoading(false);
+        runtime.draftController.commit(
+          runtime.draftController.replaceLastItem({ ...runtime.currentChat })
+        );
+        settleDataConversation();
+      }
     };
     querySSE(
       {
