@@ -8,13 +8,13 @@ const request: AxiosInstance = axios.create({
   baseURL: resolveServiceBaseUrl(SERVICE_BASE_URL),
   timeout: 10000,
   withCredentials: true,
-  headers: {'Content-Type': 'application/json',},
 });
 
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
     // 兼容仍然依赖设备标识的上传与流式接口
+    config.headers = config.headers || {};
     config.headers['X-Device-Id'] = getDeviceId();
     return config;
   },
